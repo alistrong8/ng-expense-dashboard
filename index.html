@@ -120,10 +120,10 @@ function renderPage1(){
   const missingPayDate=d.filter(r=>r.paymentStatus==='Payment Completed'&&!r.paymentDate).length;
   const missingPayEv=d.filter(r=>r.paymentStatus==='Payment Completed'&&!r.paymentEvidence).length;
   const pendingAppr=d.filter(r=>!r.approval||r.approval==='').length;
-  const invApplyTAT=d.filter(r=>r.submittedDate&&r.invoiceDate).map(r=>(new Date(r.submittedDate)-new Date(r.invoiceDate))/86400000);
-  const mailApplyTAT=d.filter(r=>r.mailDate&&r.submittedDate).map(r=>(new Date(r.mailDate)-new Date(r.submittedDate))/86400000);
-  const payTAT=d.filter(r=>r.paymentDate&&r.mailDate).map(r=>(new Date(r.paymentDate)-new Date(r.mailDate))/86400000);
-  const overallTAT=d.filter(r=>r.paymentDate&&r.invoiceDate).map(r=>(new Date(r.paymentDate)-new Date(r.invoiceDate))/86400000);
+  // TAT: submittedDate as base
+  const mailApplyTAT=d.filter(r=>r.mailDate&&r.submittedDate&&new Date(r.submittedDate)<=new Date(r.mailDate)).map(r=>(new Date(r.mailDate)-new Date(r.submittedDate))/86400000);
+  const payTAT=d.filter(r=>r.paymentDate&&r.mailDate&&new Date(r.mailDate)<=new Date(r.paymentDate)).map(r=>(new Date(r.paymentDate)-new Date(r.mailDate))/86400000);
+  const overallTAT=d.filter(r=>r.paymentDate&&r.submittedDate&&new Date(r.submittedDate)<=new Date(r.paymentDate)).map(r=>(new Date(r.paymentDate)-new Date(r.submittedDate))/86400000);
 
   document.getElementById('page1').innerHTML=`
 <h2 class="page-title">📊 Executive Finance Overview — 2025</h2>
@@ -133,8 +133,8 @@ function renderPage1(){
   <div class="kpi"><div class="kpi-val green">${fmtNGN(paidAmt)}</div><div class="kpi-lbl">Paid Amount</div><div class="kpi-sub green">${payRate.toFixed(1)}% completion</div></div>
   <div class="kpi"><div class="kpi-val amber">${fmtNGN(pendingAmt)}</div><div class="kpi-lbl">Pending Amount</div></div>
   <div class="kpi"><div class="kpi-val red">${fmtNGN(rejAmt)}</div><div class="kpi-lbl">Rejected Amount</div><div class="kpi-sub red">${rejRate.toFixed(1)}% rate</div></div>
+  <div class="kpi" style="border-left:3px solid var(--red)"><div class="kpi-val red">${rej.length}</div><div class="kpi-lbl">Rejected / Re-apply</div></div>
   <div class="kpi"><div class="kpi-val">${avg(overallTAT).toFixed(1)}d</div><div class="kpi-lbl">Avg Overall TAT</div></div>
-  <div class="kpi"><div class="kpi-val">${avg(invApplyTAT).toFixed(1)}d</div><div class="kpi-lbl">Avg Invoice→Submit TAT</div></div>
   <div class="kpi"><div class="kpi-val">${avg(mailApplyTAT).toFixed(1)}d</div><div class="kpi-lbl">Avg Submit→Mail TAT</div></div>
   <div class="kpi"><div class="kpi-val">${avg(payTAT).toFixed(1)}d</div><div class="kpi-lbl">Avg Mail→Payment TAT</div></div>
   <div class="kpi" style="border-left:3px solid var(--red)"><div class="kpi-val red">${dupInv}</div><div class="kpi-lbl">Duplicate Invoices</div></div>
@@ -142,7 +142,6 @@ function renderPage1(){
   <div class="kpi" style="border-left:3px solid var(--red)"><div class="kpi-val red">${missingPayDate}</div><div class="kpi-lbl">Paid w/ Missing Pay Date</div></div>
   <div class="kpi" style="border-left:3px solid var(--red)"><div class="kpi-val red">${missingPayEv}</div><div class="kpi-lbl">Paid w/ Missing Evidence</div></div>
   <div class="kpi" style="border-left:3px solid var(--amber)"><div class="kpi-val amber">${pendingAppr}</div><div class="kpi-lbl">Pending Approval</div></div>
-  <div class="kpi" style="border-left:3px solid var(--red)"><div class="kpi-val red">${rej.length}</div><div class="kpi-lbl">Rejected / Re-apply</div></div>
 </div>
 <div class="chart-row">
   <div class="chart-card"><h3>📈 Monthly Spend Trend (2025)</h3><canvas id="chartMonthly"></canvas></div>
