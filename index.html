@@ -100,7 +100,7 @@ fetch('data.json')
   .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
   .then(data=>{
     rawData=data;
-    document.getElementById('dataBadge').textContent=data.length.toLocaleString()+' records (2025)';
+    document.getElementById('dataBadge').textContent=data.length.toLocaleString()+' records (2026)';
     if(typeof Chart!=='undefined'){Chart.defaults.color=C.text;Chart.defaults.borderColor=C.grid;Chart.defaults.font.size=10}
     renderPage1();
   })
@@ -124,7 +124,7 @@ function renderPage1(){
   const overallTAT=d.filter(r=>r.paymentDate&&r.actualSubmitDate&&new Date(r.actualSubmitDate)<=new Date(r.paymentDate)).map(r=>(new Date(r.paymentDate)-new Date(r.actualSubmitDate))/86400000);
 
   document.getElementById('page1').innerHTML=`
-<h2 class="page-title">📊 Executive Finance Overview — 2025</h2>
+<h2 class="page-title">📊 Executive Finance Overview — 2026</h2>
 <div class="kpi-grid">
   <div class="kpi"><div class="kpi-val blue">${fmtNGN(totalAmt)}</div><div class="kpi-lbl">Total Expense</div></div>
   <div class="kpi"><div class="kpi-val">${fmt(total)}</div><div class="kpi-lbl">Total Transactions</div></div>
@@ -140,7 +140,7 @@ function renderPage1(){
   <div class="kpi" style="border-left:3px solid var(--amber)"><div class="kpi-val amber">${pendingAppr}</div><div class="kpi-lbl">Pending Approval</div></div>
 </div>
 <div class="chart-row">
-  <div class="chart-card"><h3>📈 Monthly Spend Trend (2025)</h3><canvas id="chartMonthly"></canvas></div>
+  <div class="chart-card"><h3>📈 Monthly Spend Trend (2026)</h3><canvas id="chartMonthly"></canvas></div>
   <div class="chart-card"><h3>💰 Expense by Category (Top 10)</h3><canvas id="chartCat"></canvas></div>
 </div>
 <div class="chart-row">
@@ -155,7 +155,7 @@ function renderPage1(){
   if(typeof Chart==='undefined')return;
   // Monthly chart using actualSubmitDate (NOT month field)
   const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
-  const monthKeys=['2025-01','2025-02','2025-03','2025-04','2025-05','2025-06','2025-07','2025-08'];
+  const monthKeys=['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06','2026-07','2026-08'];
   const monthlyAmt=monthKeys.map(mk=>{const md=d.filter(r=>r.actualSubmitDate&&r.actualSubmitDate.startsWith(mk));return md.reduce((s,r)=>s+r.amount,0)});
   const monthlyCount=monthKeys.map(mk=>d.filter(r=>r.actualSubmitDate&&r.actualSubmitDate.startsWith(mk)).length);
 
@@ -182,14 +182,16 @@ function renderPage1(){
   charts.payChart=new Chart(document.getElementById('chartPay'),{type:'doughnut',data:{labels:Object.keys(statusAmt),datasets:[{data:Object.values(statusAmt),backgroundColor:[C.green,C.amber,C.red,C.purple,C.teal]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},color:C.text}},tooltip:{callbacks:{label:function(c){return fmtNGN(c.raw)+' ('+(c.raw/totalAmt*100).toFixed(1)+'%)'}}}}}});
 
   // Rejection trend
+  const rejCounts=monthKeys.map(mk=>{const md=d.filter(r=>r.actualSubmitDate&&r.actualSubmitDate.startsWith(mk));return md.filter(r=>r.approval==='Fail Verification').length});
   const rejRates=monthKeys.map(mk=>{const md=d.filter(r=>r.actualSubmitDate&&r.actualSubmitDate.startsWith(mk));return md.length>0?md.filter(r=>r.approval==='Fail Verification').length/md.length*100:0});
   safeDestroy('rejTrend');
-  charts.rejTrend=new Chart(document.getElementById('chartRej'),{type:'line',data:{labels:months,datasets:[{label:'Rejection Rate %',data:rejRates,borderColor:C.red,backgroundColor:'rgba(239,68,68,0.1)',fill:true,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:function(c){return c.raw.toFixed(1)+'% rejection rate'}}}},scales:{y:{ticks:{callback:v=>v+'%'}}}}});
+  charts.rejTrend=new Chart(document.getElementById('chartRej'),{type:'line',data:{labels:monthNames,datasets:[{label:'Rejection Rate %',data:rejRates,borderColor:C.red,backgroundColor:'rgba(239,68,68,0.1)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:C.red}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:C.text,font:{size:10}}},tooltip:{callbacks:{label:function(c){const i=c.dataIndex;return 'Rejection Rate: '+c.raw.toFixed(1)+'% | '+rejCounts[i]+' rejected'}}}},scales:{y:{ticks:{callback:v=>v+'%'},min:0}}}});
 
   // TAT trend
   const tatTrends=monthKeys.map(mk=>{const md=d.filter(r=>r.actualSubmitDate&&r.actualSubmitDate.startsWith(mk)&&r.paymentDate&&r.actualSubmitDate);const tats=md.map(r=>(new Date(r.paymentDate)-new Date(r.actualSubmitDate))/86400000);return tats.length>0?tats.reduce((a,b)=>a+b,0)/tats.length:0});
+  const tatCounts=monthKeys.map(mk=>{const md=d.filter(r=>r.actualSubmitDate&&r.actualSubmitDate.startsWith(mk)&&r.paymentDate&&r.actualSubmitDate);return md.length});
   safeDestroy('tatTrend');
-  charts.tatTrend=new Chart(document.getElementById('chartTAT'),{type:'line',data:{labels:months,datasets:[{label:'Avg Overall TAT (days)',data:tatTrends,borderColor:C.blue,backgroundColor:'rgba(59,130,246,0.1)',fill:true,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:function(c){return c.raw.toFixed(1)+' days'}}}},scales:{y:{ticks:{callback:v=>v+'d'}}}}});
+  charts.tatTrend=new Chart(document.getElementById('chartTAT'),{type:'line',data:{labels:monthNames,datasets:[{label:'Avg Overall TAT (days)',data:tatTrends,borderColor:C.blue,backgroundColor:'rgba(59,130,246,0.1)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:C.blue}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:C.text,font:{size:10}}},tooltip:{callbacks:{label:function(c){const i=c.dataIndex;return 'Avg TAT: '+c.raw.toFixed(1)+' days | '+tatCounts[i]+' records'}}}},scales:{y:{ticks:{callback:v=>v+'d'},min:0}}}});
 }
 
 function stubPage(id,label){document.getElementById(id).innerHTML='<h2 class="page-title">'+label+'</h2><p style="color:var(--muted)">Coming in next stage...</p>'}
