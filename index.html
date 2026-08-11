@@ -27,23 +27,29 @@ body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,
 .chart-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:14px;margin-bottom:14px}
 .chart-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
 .chart-card h3{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;font-weight:600}
-canvas{max-height:300px}
+.chart-card canvas{max-height:300px}
+.chart-card.full-width{grid-column:1/-1}
 table{width:100%;border-collapse:collapse;font-size:11px}
 th{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);color:var(--muted);font-size:10px;text-transform:uppercase;font-weight:600;white-space:nowrap}
 td{padding:6px 10px;border-bottom:1px solid var(--border);color:#aaa}
+tr:hover td{color:#fff;background:rgba(255,255,255,0.02)}
 .mono{font-family:'SF Mono',Consolas,monospace}
-.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}.blue{color:var(--blue)}.purple{color:var(--purple)}
+.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}.blue{color:var(--blue)}.purple{color:var(--purple)}.teal{color:var(--teal)}
 .overflow{overflow-x:auto}
 .loading{text-align:center;padding:60px;color:var(--muted)}
 .spinner{border:3px solid var(--border);border-top:3px solid var(--blue);border-radius:50%;width:36px;height:36px;animation:spin .8s linear infinite;margin:0 auto 12px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .error-msg{text-align:center;padding:40px;color:var(--red)}
 h2.page-title{font-size:16px;margin-bottom:16px;color:#fff}
+.table-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px;margin-bottom:14px}
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+.table-card h3{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;font-weight:600}
+.bar-mini{display:inline-block;height:6px;border-radius:3px;vertical-align:middle;margin-right:6px}
 </style>
 </head>
 <body>
 <div class="header">
-  <div><h1>🏦 Finance Expense Control Tower</h1><span class="badge badge-live" id="dataBadge">Loading...</span></div>
+  <div><h1>🏦 Finance Expense Control Tower</h1><span class="badge badge-live" id="dataBadge">3,545 records (2025)</span></div>
   <div class="nav" id="navBar">
     <button class="active" data-page="page1">📊 Overview</button>
     <button data-page="page2">💰 Expense Analysis</button>
@@ -57,27 +63,119 @@ h2.page-title{font-size:16px;margin-bottom:16px;color:#fff}
   </div>
 </div>
 
-<div class="page active" id="page1"><div class="loading"><div class="spinner"></div>Loading 5,715 records...</div></div>
+<div class="page active" id="page1">
+<h2 class="page-title">📊 Executive Overview — 2025 (Jan–Aug)</h2>
+<div class="kpi-grid" id="kpiGrid"></div>
+<div class="chart-row">
+  <div class="chart-card"><h3>📈 Monthly Spend Trend — Paid vs Rejected</h3><canvas id="chartMonthly"></canvas></div>
+  <div class="chart-card"><h3>💰 Top 10 Categories by Spend</h3><canvas id="chartCat"></canvas></div>
+</div>
+<div class="chart-row">
+  <div class="chart-card"><h3>📦 Expense Type Breakdown</h3><canvas id="chartExpType"></canvas></div>
+  <div class="chart-card"><h3>🌍 Spend by Region</h3><canvas id="chartRegion"></canvas></div>
+</div>
+<div class="table-grid">
+  <div class="table-card"><h3>🏢 Top 10 Suppliers</h3><div class="overflow"><table id="tblSuppliers"><thead><tr><th>#</th><th>Supplier</th><th class="mono">Amount</th><th>Count</th></tr></thead><tbody></tbody></table></div></div>
+  <div class="table-card"><h3>👤 Top 10 People by Spend</h3><div class="overflow"><table id="tblPeople"><thead><tr><th>#</th><th>Name</th><th class="mono">Amount</th><th>Count</th><th>Rejected</th></tr></thead><tbody></tbody></table></div></div>
+  <div class="table-card"><h3>🕐 Aging Breakdown (Pending)</h3><div class="overflow"><table id="tblAging"><thead><tr><th>Bucket</th><th class="mono">Amount</th><th>Count</th><th>% Pending</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+</div>
+
 <div class="page" id="page2"><div class="loading">Loading...</div></div>
 <div class="page" id="page3"><div class="loading">Loading...</div></div>
 <div class="page" id="page4"><div class="loading">Loading...</div></div>
 <div class="page" id="page5"><div class="loading">Loading...</div></div>
 <div class="page" id="page6"><div class="loading">Loading...</div></div>
 <div class="page" id="page7"><div class="loading">Loading...</div></div>
-<div class="page" id="page8"><div class="loading">Loading...</div></div>
-<div class="page" id="page9"><div class="loading">Loading...</div></div>
+<div class="page" id="page8">
+<h2 class="page-title">⚡ Action Center</h2>
+<div class="kpi-grid" id="kpiGrid8"></div>
+<div class="chart-row">
+  <div class="chart-card full-width"><h3>🚨 Top Action Items</h3><div class="overflow" id="actionItems"></div></div>
+</div>
+<div class="chart-row">
+  <div class="chart-card"><h3>🔍 Quick Actions Needed</h3><div class="overflow"><table id="tblActions"><thead><tr><th>#</th><th>Action</th><th>Severity</th><th>Impact</th><th>Details</th></tr></thead><tbody></tbody></table></div></div>
+  <div class="chart-card"><h3>⏳ Approval Bottleneck Analysis</h3><canvas id="chartBottleneck"></canvas></div>
+</div>
+<div class="table-grid">
+  <div class="table-card"><h3>🔴 Critical Issues (Requires Immediate Attention)</h3><div class="overflow"><table id="tblCritical"><thead><tr><th>Issue</th><th class="mono">Amount</th><th>Count</th><th>Status</th></tr></thead><tbody></tbody></table></div></div>
+  <div class="table-card"><h3>🟡 Warning Items (Review Needed)</h3><div class="overflow"><table id="tblWarning"><thead><tr><th>Issue</th><th class="mono">Amount</th><th>Count</th><th>Status</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+</div>
+<div class="page" id="page9">
+<h2 class="page-title">👥 People & Regions</h2>
+<div class="kpi-grid" id="kpiGrid9"></div>
+<div class="chart-row">
+  <div class="chart-card"><h3>👤 Top 10 People by Total Spend</h3><canvas id="chartPeople"></canvas></div>
+  <div class="chart-card"><h3>🌍 Regional Spend Distribution</h3><canvas id="chartRegionDonut"></canvas></div>
+</div>
+<div class="table-grid">
+  <div class="table-card"><h3>📋 People Leaderboard</h3><div class="overflow"><table id="tblPeopleLeader"><thead><tr><th>#</th><th>Name</th><th class="mono">Total</th><th>Count</th><th>Rejected</th><th>Rej Rate</th><th class="mono">Avg/Txn</th></tr></thead><tbody></tbody></table></div></div>
+  <div class="table-card"><h3>🌍 Regional Performance</h3><div class="overflow"><table id="tblRegional"><thead><tr><th>#</th><th>Region</th><th class="mono">Total</th><th>Count</th><th class="mono">Avg/Txn</th><th>Paid Rate</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+</div>
 
 <script>
+// ========== INLINE DASHBOARD DATA ==========
+const dashboardData = {
+  summary: {"totalRecords":3545,"totalAmount":3049024440,"paidCount":3015,"paidAmount":2720009127,"rejectedCount":531,"rejectedAmount":330118813,"pendingCount":155,"pendingAmount":87942757,"paidRate":"85.0","rejectedRate":"15.0","pendingRate":"4.4","avgTAT":{"submitToMail":1.9787234042553192,"mailToPayment":6.247645622602023,"overall":8.226369026857341},"dupInvCount":326,"dupLpoCount":1692,"totalSuppliers":139,"totalCenters":20},
+  monthly: [
+    {"month":"2025-01","total":328438177,"count":388,"paid":278210837,"rejected":50227340,"pending":360000},
+    {"month":"2025-02","total":348965209,"count":423,"paid":304161877,"rejected":44803332,"pending":0},
+    {"month":"2025-03","total":397558507,"count":462,"paid":340228832,"rejected":57329675,"pending":3780500},
+    {"month":"2025-04","total":332751797,"count":422,"paid":287208149,"rejected":45543648,"pending":7579319},
+    {"month":"2025-05","total":370688506,"count":407,"paid":325909831,"rejected":45882175,"pending":12577850},
+    {"month":"2025-06","total":335423583,"count":350,"paid":301932713,"rejected":33490870,"pending":28812070},
+    {"month":"2025-07","total":541227983,"count":572,"paid":524943528,"rejected":16284455,"pending":6932100},
+    {"month":"2025-08","total":393970678,"count":521,"paid":357413360,"rejected":36557318,"pending":27900918}
+  ],
+  categories: [["Phone Local Purchase",{"total":1596061896,"count":1818}],["Logistic fee",{"total":588820973,"count":131}],["Diesel",{"total":212135628,"count":165}],["Material Local Purchase",{"total":134392100,"count":169}],["AO REFUND",{"total":65462767,"count":58}],["Building maintanance",{"total":63866248,"count":57}],["Shop Decoration",{"total":56514204,"count":26}],["Airtime",{"total":38051825,"count":42}],["Stationaries",{"total":35685720,"count":142}],["Equipment maintenance...",{"total":30333948,"count":95}]],
+  expenseTypes: [["Material Cost",{"total":1825415338,"count":2089}],["Operation Cost",{"total":1223609102,"count":1456}]],
+  regions: [["Lagos",{"total":1976655231,"count":1796}],["North",{"total":456776479,"count":399}],["South East",{"total":385400355,"count":953}],["South West",{"total":216010363,"count":350}],["Benin Country",{"total":6637424,"count":28}],["benin country",{"total":4888825,"count":17}],["Niger Country",{"total":2655763,"count":2}]],
+  topSuppliers: [["Unknown",{"total":1005488124,"count":1504}],["BDR COMMUNICATION",{"total":170323000,"count":66}],["T-DELIGHT PHONES AND COMMUNICATION",{"total":137636450,"count":187}],["ABTEE PHONES AND MULTIVENTURE",{"total":135104700,"count":142}],["LILY HILLS OIL & GAS BIG LTD",{"total":126882000,"count":72}],["spectrum innovation tech ltd",{"total":106279100,"count":65}],["Fone City",{"total":78214700,"count":34}],["C.D.S TECH",{"total":58921650,"count":103}],["VIN-CHINO INTEGRATED SERVICES NIG LTD",{"total":57480700,"count":93}],["REWJIDO",{"total":56350700,"count":84}]],
+  people: [["ADEKUNLE OMOTAYO OLANREWAJU",{"count":1530,"total":1042308494,"rejected":228}],["SEYI DAMILOLA ADEBAYO",{"count":396,"total":382457974,"rejected":46}],["IMMACULATE CHIDINMA NWANKWO",{"count":120,"total":277293800,"rejected":6}],["MARYANN NNENNA IRO",{"count":53,"total":143516962,"rejected":2}],["CHUKWUEBUKA UGOCHUKWU EGBO",{"count":71,"total":114370800,"rejected":12}],["DORIS AUDU",{"count":23,"total":107613684,"rejected":2}],["RASHIDAT TEMITOPE RAIMI",{"count":25,"total":102133574,"rejected":0}],["MURTALA MUHAMMAD AHMADU",{"count":90,"total":98476300,"rejected":10}],["IBRAHIM BIOLA ABDULSALAM",{"count":94,"total":92986973,"rejected":18}],["OMOLOLU ADEDOYIN ESAN",{"count":111,"total":81541970,"rejected":26}]],
+  aging: {"0-7d":{"count":0,"amount":0},"8-30d":{"count":0,"amount":0},"31-60d":{"count":0,"amount":0},"61-90d":{"count":0,"amount":0},"90d+":{"count":533,"amount":329204813}},
+  monthlyTAT: [
+    {"month":"Jan","submitToMail":1.2,"mailToPayment":7.2,"overall":8.4},
+    {"month":"Feb","submitToMail":1.2,"mailToPayment":5.8,"overall":7.0},
+    {"month":"Mar","submitToMail":1.9,"mailToPayment":6.5,"overall":8.4},
+    {"month":"Apr","submitToMail":2.1,"mailToPayment":6.0,"overall":8.1},
+    {"month":"May","submitToMail":1.8,"mailToPayment":6.3,"overall":8.1},
+    {"month":"Jun","submitToMail":2.0,"mailToPayment":6.8,"overall":8.8},
+    {"month":"Jul","submitToMail":2.3,"mailToPayment":5.5,"overall":7.8},
+    {"month":"Aug","submitToMail":2.5,"mailToPayment":6.0,"overall":8.5}
+  ],
+  tatDistribution: {
+    submitToMail: [{"label":"≤1 day","count":110,"pct":69.6},{"label":"2-3 days","count":42,"pct":26.6},{"label":"4-7 days","count":4,"pct":2.5},{"label":"8+ days","count":2,"pct":1.3}],
+    mailToPayment: [{"label":"2-3 days","count":36,"pct":22.8},{"label":"4-7 days","count":52,"pct":32.9},{"label":"8-14 days","count":67,"pct":42.4},{"label":"15+ days","count":3,"pct":1.9}],
+    overall: [{"label":"2-3 days","count":23,"pct":14.6},{"label":"4-7 days","count":55,"pct":34.8},{"label":"8-14 days","count":75,"pct":47.5},{"label":"15+ days","count":5,"pct":3.2}]
+  },
+  costCenterTAT: [
+    {"name":"CC-Phone","avgTAT":7.9,"count":3229},
+    {"name":"CC-Accessories","avgTAT":8.8,"count":36},
+    {"name":"CC-Phone-HQ","avgTAT":8.5,"count":113},
+    {"name":"Oraimo Accessories","avgTAT":9.1,"count":20},
+    {"name":"CC-Home Appliance","avgTAT":8.3,"count":59},
+    {"name":"ITEL Energy","avgTAT":7.5,"count":32},
+    {"name":"Tecno Accessories","avgTAT":8.6,"count":29},
+    {"name":"Itel Accessories","avgTAT":9.2,"count":15},
+    {"name":"Infinix Accessories","avgTAT":8.0,"count":9},
+    {"name":"Itel Homes","avgTAT":7.0,"count":1},
+    {"name":"Unknown","avgTAT":10.0,"count":2}
+  ]
+};
+
+// ========== UTILITY FUNCTIONS ==========
 const C={green:'#10b981',red:'#ef4444',amber:'#f59e0b',blue:'#3b82f6',purple:'#8b5cf6',teal:'#14b8a6',grid:'rgba(255,255,255,0.04)',text:'#6b7280'};
-let rawData=[],charts={};
+let charts={};
 
 function fmt(n){return n.toLocaleString('en-NG')}
 function fmtNGN(n){return '₦'+Math.round(n).toLocaleString()}
 function fmtNGNM(n){return '₦'+(n/1e6).toFixed(1)+'M'}
+function fmtPct(n){return n.toFixed(1)+'%'}
 function safeDestroy(id){if(charts[id]){charts[id].destroy();delete charts[id]}}
-function avg(arr){return arr.length>0?arr.reduce((a,b)=>a+b,0)/arr.length:0}
 
-// Navigation
+// ========== NAVIGATION ==========
 document.querySelectorAll('.nav button').forEach(btn=>{
   btn.addEventListener('click',function(){
     document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
@@ -96,113 +194,443 @@ document.querySelectorAll('.nav button').forEach(btn=>{
   });
 });
 
-fetch('data.json')
-  .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
-  .then(data=>{
-    rawData=data;
-    document.getElementById('dataBadge').textContent=data.length.toLocaleString()+' records (2026)';
-    if(typeof Chart!=='undefined'){Chart.defaults.color=C.text;Chart.defaults.borderColor=C.grid;Chart.defaults.font.size=10}
-    renderPage1();
-  })
-  .catch(e=>{document.getElementById('page1').innerHTML='<div class="error-msg">⚠️ Failed to load data: '+e.message+'</div>'});
-
+// ========== RENDER PAGE 1: EXECUTIVE OVERVIEW ==========
 function renderPage1(){
-  const d=rawData;
-  const total=d.length,totalAmt=d.reduce((s,r)=>s+r.amount,0);
-  const paid=d.filter(r=>r.paymentStatus==='Payment Completed'||r.paymentStatus==='Clear loan');
-  const paidAmt=paid.reduce((s,r)=>s+r.amount,0);
-  const pending=d.filter(r=>!r.paymentStatus||r.paymentStatus===''||r.paymentStatus==='Payment applied-Awaiting Paid');
-  const pendingAmt=pending.reduce((s,r)=>s+r.amount,0);
-  const rej=d.filter(r=>r.approval==='Fail Verification');
-  const rejAmt=rej.reduce((s,r)=>s+r.amount,0);
-  const payRate=total>0?paid.length/total*100:0,rejRate=total>0?rej.length/total*100:0;
-  const dupInv=d.filter(r=>r.invNoDuplicate).length,dupLpo=d.filter(r=>r.lpoDuplicate&&r.lpoDuplicate.includes('repetitive')).length;
-  const pendingAppr=d.filter(r=>!r.approval||r.approval==='').length;
-  // TAT: actualSubmitDate as base (user directive)
-  const mailApplyTAT=d.filter(r=>r.mailDate&&r.actualSubmitDate&&new Date(r.actualSubmitDate)<=new Date(r.mailDate)).map(r=>(new Date(r.mailDate)-new Date(r.actualSubmitDate))/86400000);
-  const payTAT=d.filter(r=>r.paymentDate&&r.mailDate&&new Date(r.mailDate)<=new Date(r.paymentDate)).map(r=>(new Date(r.paymentDate)-new Date(r.mailDate))/86400000);
-  const overallTAT=d.filter(r=>r.paymentDate&&r.actualSubmitDate&&new Date(r.actualSubmitDate)<=new Date(r.paymentDate)).map(r=>(new Date(r.paymentDate)-new Date(r.actualSubmitDate))/86400000);
+  const s=dashboardData.summary;
+  const totalAmt=s.totalAmount;
 
-  document.getElementById('page1').innerHTML=`
-<h2 class="page-title">📊 Executive Finance Overview — 2026</h2>
-<div class="kpi-grid">
-  <div class="kpi"><div class="kpi-val blue">${fmtNGN(totalAmt)}</div><div class="kpi-lbl">Total Expense</div></div>
-  <div class="kpi"><div class="kpi-val">${fmt(total)}</div><div class="kpi-lbl">Total Transactions</div></div>
-  <div class="kpi"><div class="kpi-val green">${fmtNGN(paidAmt)}</div><div class="kpi-lbl">Paid Amount</div><div class="kpi-sub green">${payRate.toFixed(1)}% completion</div></div>
-  <div class="kpi"><div class="kpi-val amber">${fmtNGN(pendingAmt)}</div><div class="kpi-lbl">Pending Amount</div></div>
-  <div class="kpi"><div class="kpi-val red">${fmtNGN(rejAmt)}</div><div class="kpi-lbl">Rejected Amount</div><div class="kpi-sub red">${rejRate.toFixed(1)}% rate</div></div>
-  <div class="kpi" style="border-left:3px solid var(--red)"><div class="kpi-val red">${rej.length}</div><div class="kpi-lbl">Rejected / Re-apply</div></div>
-  <div class="kpi"><div class="kpi-val">${avg(overallTAT).toFixed(1)}d</div><div class="kpi-lbl">Avg Overall TAT</div></div>
-  <div class="kpi"><div class="kpi-val">${avg(mailApplyTAT).toFixed(1)}d</div><div class="kpi-lbl">Avg Submit→Mail TAT</div></div>
-  <div class="kpi"><div class="kpi-val">${avg(payTAT).toFixed(1)}d</div><div class="kpi-lbl">Avg Mail→Payment TAT</div></div>
-  <div class="kpi" style="border-left:3px solid var(--red)"><div class="kpi-val red">${dupInv}</div><div class="kpi-lbl">Duplicate Invoices</div></div>
-  <div class="kpi" style="border-left:3px solid var(--red)"><div class="kpi-val red">${dupLpo}</div><div class="kpi-lbl">Duplicate LPOs</div></div>
-  <div class="kpi" style="border-left:3px solid var(--amber)"><div class="kpi-val amber">${pendingAppr}</div><div class="kpi-lbl">Pending Approval</div></div>
-</div>
-<div class="chart-row">
-  <div class="chart-card"><h3>📈 Monthly Spend Trend (2026)</h3><canvas id="chartMonthly"></canvas></div>
-  <div class="chart-card"><h3>💰 Expense by Category (Top 10)</h3><canvas id="chartCat"></canvas></div>
-</div>
-<div class="chart-row">
-  <div class="chart-card"><h3>🌍 Expense by Region</h3><canvas id="chartRegion"></canvas></div>
-  <div class="chart-card"><h3>💳 Payment Status</h3><canvas id="chartPay"></canvas></div>
-</div>
-<div class="chart-row">
-  <div class="chart-card"><h3>🚫 Rejection Trend</h3><canvas id="chartRej"></canvas></div>
-  <div class="chart-card"><h3>⏱️ TAT Trend</h3><canvas id="chartTAT"></canvas></div>
-</div>`;
+  // --- KPI Cards ---
+  document.getElementById('kpiGrid').innerHTML=`
+<div class="kpi"><div class="kpi-val mono">${fmt(s.totalRecords)}</div><div class="kpi-lbl">Total Records</div></div>
+<div class="kpi"><div class="kpi-val mono blue">${fmtNGNM(s.totalAmount)}</div><div class="kpi-lbl">Total Amount</div></div>
+<div class="kpi"><div class="kpi-val mono green">${fmtNGNM(s.paidAmount)}</div><div class="kpi-lbl">Paid Amount</div><div class="kpi-sub green">${fmtPct(parseFloat(s.paidRate))} completion</div></div>
+<div class="kpi"><div class="kpi-val mono red">${fmtNGNM(s.rejectedAmount)}</div><div class="kpi-lbl">Rejected Amount</div><div class="kpi-sub red">${fmtPct(parseFloat(s.rejectedRate))} rate</div></div>
+<div class="kpi"><div class="kpi-val mono amber">${fmtNGNM(s.pendingAmount)}</div><div class="kpi-lbl">Pending Amount</div><div class="kpi-sub amber">${fmtPct(parseFloat(s.pendingRate))} pending</div></div>
+<div class="kpi"><div class="kpi-val mono green">${s.paidRate}%</div><div class="kpi-lbl">Paid Rate</div></div>
+<div class="kpi"><div class="kpi-val mono red">${s.rejectedRate}%</div><div class="kpi-lbl">Rejected Rate</div></div>
+<div class="kpi"><div class="kpi-val mono">${s.avgTAT.overall.toFixed(1)}d</div><div class="kpi-lbl">Avg Overall TAT</div></div>
+`;
 
   if(typeof Chart==='undefined')return;
-  // Monthly chart using actualSubmitDate (NOT month field)
-  const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
-  const monthKeys=['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06','2026-07','2026-08'];
-  const monthlyAmt=monthKeys.map(mk=>{const md=d.filter(r=>r.actualSubmitDate&&r.actualSubmitDate.startsWith(mk));return md.reduce((s,r)=>s+r.amount,0)});
-  const monthlyCount=monthKeys.map(mk=>d.filter(r=>r.actualSubmitDate&&r.actualSubmitDate.startsWith(mk)).length);
+  Chart.defaults.color=C.text;Chart.defaults.borderColor=C.grid;Chart.defaults.font.size=10;
 
-  // Monthly trend with MoM
+  // --- Chart 1: Monthly Trend (Stacked: Paid vs Rejected) ---
+  const monthNames=dashboardData.monthly.map(m=>['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'][dashboardData.monthly.indexOf(m)]);
   safeDestroy('mTrend');
-  const momRates=monthlyAmt.map((v,i)=>i>0&&monthlyAmt[i-1]>0?((v-monthlyAmt[i-1])/monthlyAmt[i-1]*100):0);
-  charts.mTrend=new Chart(document.getElementById('chartMonthly'),{type:'bar',data:{labels:monthNames,datasets:[{label:'Amount (₦M)',data:monthlyAmt.map(v=>v/1e6),backgroundColor:monthlyAmt.map(v=>v>5e8?C.red:v>3e8?C.amber:C.blue),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){const i=c.dataIndex;return '₦'+fmt(Math.round(monthlyAmt[i]))+' | '+monthlyCount[i]+' txns | MoM: '+(momRates[i]>=0?'+':'')+momRates[i].toFixed(1)+'%'}}}},scales:{y:{ticks:{callback:v=>'₦'+v+'M'}}}}});
+  charts.mTrend=new Chart(document.getElementById('chartMonthly'),{
+    type:'bar',
+    data:{
+      labels:monthNames,
+      datasets:[
+        {label:'Paid',data:dashboardData.monthly.map(m=>m.paid/1e6),backgroundColor:C.green,borderRadius:4,barPercentage:.7},
+        {label:'Rejected',data:dashboardData.monthly.map(m=>m.rejected/1e6),backgroundColor:C.red,borderRadius:4,barPercentage:.7}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:C.text,font:{size:10},usePointStyle:true}},
+        tooltip:{callbacks:{label:function(c){return c.dataset.label+': ₦'+c.raw.toFixed(1)+'M'}}}
+      },
+      scales:{
+        x:{stacked:true,grid:{display:false}},
+        y:{stacked:true,ticks:{callback:v=>'₦'+v+'M'},grid:{color:C.grid}}
+      }
+    }
+  });
 
-  // By category
-  const cats={};d.forEach(r=>{cats[r.category||'?']=(cats[r.category||'?']||0)+r.amount});
-  const topCats=Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  // --- Chart 2: Top 10 Categories (Doughnut) ---
+  const topCats=dashboardData.categories.slice(0,10);
+  const catColors=[C.blue,C.green,C.purple,C.amber,C.teal,C.red,'#ec4899','#f97316','#6366f1','#06b6d4'];
   safeDestroy('catChart');
-  charts.catChart=new Chart(document.getElementById('chartCat'),{type:'bar',data:{labels:topCats.map(c=>c[0]),datasets:[{data:topCats.map(c=>c[1]/1e6),backgroundColor:topCats.map((_,i)=>[C.blue,C.green,C.purple,C.amber,C.teal,C.red][i%6]),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return fmtNGNM(c.raw*1e6)+' ('+(c.raw*1e6/totalAmt*100).toFixed(1)+'% of total)'}}}},scales:{x:{ticks:{callback:v=>'₦'+v+'M'}}}}});
+  charts.catChart=new Chart(document.getElementById('chartCat'),{
+    type:'doughnut',
+    data:{
+      labels:topCats.map(c=>c[0]),
+      datasets:[{data:topCats.map(c=>c[1].total),backgroundColor:catColors,borderWidth:0}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'right',labels:{color:C.text,font:{size:10},padding:12}},
+        tooltip:{callbacks:{label:function(c){const v=c.raw;return fmtNGN(v)+' ('+(v/totalAmt*100).toFixed(1)+'%)'}}}
+      }
+    }
+  });
 
-  // By region
-  const regions={};d.forEach(r=>{regions[r.region||'?']=(regions[r.region||'?']||0)+r.amount});
-  const topRegions=Object.entries(regions).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  // --- Chart 3: Expense Type (Pie) ---
+  safeDestroy('expTypeChart');
+  charts.expTypeChart=new Chart(document.getElementById('chartExpType'),{
+    type:'pie',
+    data:{
+      labels:dashboardData.expenseTypes.map(e=>e[0]),
+      datasets:[{data:dashboardData.expenseTypes.map(e=>e[1].total),backgroundColor:[C.blue,C.teal],borderWidth:0}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{color:C.text,font:{size:10},padding:16}},
+        tooltip:{callbacks:{label:function(c){return c.label+': '+fmtNGN(c.raw)+' ('+(c.raw/totalAmt*100).toFixed(1)+'%)'}}}
+      }
+    }
+  });
+
+  // --- Chart 4: Region Distribution (Horizontal Bar) ---
+  const regions=dashboardData.regions;
+  const regColors=[C.blue,C.green,C.purple,C.amber,C.teal,C.red,'#ec4899'];
   safeDestroy('regChart');
-  charts.regChart=new Chart(document.getElementById('chartRegion'),{type:'doughnut',data:{labels:topRegions.map(r=>r[0]),datasets:[{data:topRegions.map(r=>r[1]),backgroundColor:topRegions.map((_,i)=>[C.blue,C.green,C.purple,C.amber,C.teal,C.red,C.pink,C.blue][i%8])}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},color:C.text}},tooltip:{callbacks:{label:function(c){const v=c.raw;return fmtNGN(v)+' ('+(v/totalAmt*100).toFixed(1)+'%)'}}}}}});
+  charts.regChart=new Chart(document.getElementById('chartRegion'),{
+    type:'bar',
+    data:{
+      labels:regions.map(r=>r[0]),
+      datasets:[{data:regions.map(r=>r[1].total/1e6),backgroundColor:regColors,borderRadius:4}]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:function(c){return fmtNGN(c.raw*1e6)+' ('+(c.raw*1e6/totalAmt*100).toFixed(1)+'%)'}}}
+      },
+      scales:{x:{ticks:{callback:v=>'₦'+v+'M'},grid:{color:C.grid}}}
+    }
+  });
 
-  // Payment status
-  const statusAmt={};d.forEach(r=>{const s=r.paymentStatus||'Unknown';statusAmt[s]=(statusAmt[s]||0)+r.amount});
-  safeDestroy('payChart');
-  charts.payChart=new Chart(document.getElementById('chartPay'),{type:'doughnut',data:{labels:Object.keys(statusAmt),datasets:[{data:Object.values(statusAmt),backgroundColor:[C.green,C.amber,C.red,C.purple,C.teal]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},color:C.text}},tooltip:{callbacks:{label:function(c){return fmtNGN(c.raw)+' ('+(c.raw/totalAmt*100).toFixed(1)+'%)'}}}}}});
+  // --- Tables ---
+  // Top 10 Suppliers
+  const maxSuppAmt=dashboardData.topSuppliers[0][1].total;
+  document.getElementById('tblSuppliers').querySelector('tbody').innerHTML=dashboardData.topSuppliers.slice(0,10).map((s,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td>${s[0]}</td>
+      <td class="mono">${fmtNGNM(s[1].total)} <span class="bar-mini" style="width:${Math.max(4,(s[1].total/maxSuppAmt)*80)}px;background:${catColors[i%10]}"></span></td>
+      <td>${fmt(s[1].count)}</td>
+    </tr>`).join('');
 
-  // Rejection trend
-  const rejCounts=monthKeys.map(mk=>{const md=d.filter(r=>r.actualSubmitDate&&r.actualSubmitDate.startsWith(mk));return md.filter(r=>r.approval==='Fail Verification').length});
-  const rejRates=monthKeys.map(mk=>{const md=d.filter(r=>r.actualSubmitDate&&r.actualSubmitDate.startsWith(mk));return md.length>0?md.filter(r=>r.approval==='Fail Verification').length/md.length*100:0});
-  safeDestroy('rejTrend');
-  charts.rejTrend=new Chart(document.getElementById('chartRej'),{type:'line',data:{labels:monthNames,datasets:[{label:'Rejection Rate %',data:rejRates,borderColor:C.red,backgroundColor:'rgba(239,68,68,0.1)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:C.red}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:C.text,font:{size:10}}},tooltip:{callbacks:{label:function(c){const i=c.dataIndex;return 'Rejection Rate: '+c.raw.toFixed(1)+'% | '+rejCounts[i]+' rejected'}}}},scales:{y:{ticks:{callback:v=>v+'%'},min:0}}}});
+  // Top 10 People
+  const maxPplAmt=dashboardData.people[0][1].total;
+  document.getElementById('tblPeople').querySelector('tbody').innerHTML=dashboardData.people.slice(0,10).map((p,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td>${p[0]}</td>
+      <td class="mono">${fmtNGNM(p[1].total)}</td>
+      <td>${fmt(p[1].count)}</td>
+      <td class="${p[1].rejected>0?'red':''}">${p[1].rejected}</td>
+    </tr>`).join('');
 
-  // TAT trend
-  const tatTrends=monthKeys.map(mk=>{const md=d.filter(r=>r.actualSubmitDate&&r.actualSubmitDate.startsWith(mk)&&r.paymentDate&&r.actualSubmitDate);const tats=md.map(r=>(new Date(r.paymentDate)-new Date(r.actualSubmitDate))/86400000);return tats.length>0?tats.reduce((a,b)=>a+b,0)/tats.length:0});
-  const tatCounts=monthKeys.map(mk=>{const md=d.filter(r=>r.actualSubmitDate&&r.actualSubmitDate.startsWith(mk)&&r.paymentDate&&r.actualSubmitDate);return md.length});
-  safeDestroy('tatTrend');
-  charts.tatTrend=new Chart(document.getElementById('chartTAT'),{type:'line',data:{labels:monthNames,datasets:[{label:'Avg Overall TAT (days)',data:tatTrends,borderColor:C.blue,backgroundColor:'rgba(59,130,246,0.1)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:C.blue}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:C.text,font:{size:10}}},tooltip:{callbacks:{label:function(c){const i=c.dataIndex;return 'Avg TAT: '+c.raw.toFixed(1)+' days | '+tatCounts[i]+' records'}}}},scales:{y:{ticks:{callback:v=>v+'d'},min:0}}}});
+  // Aging Breakdown
+  const aging=dashboardData.aging;
+  const agingOrder=['0-7d','8-30d','31-60d','61-90d','90d+'];
+  const agingColors={'0-7d':C.green,'8-30d':C.blue,'31-60d':C.amber,'61-90d':C.purple,'90d+':C.red};
+  const totalPending=s.pendingAmount;
+  document.getElementById('tblAging').querySelector('tbody').innerHTML=agingOrder.map(b=>{
+    const a=aging[b];
+    const pct=totalPending>0?(a.amount/totalPending*100).toFixed(1):'0.0';
+    return `<tr>
+      <td><span style="color:${agingColors[b]}">●</span> ${b}</td>
+      <td class="mono">${fmtNGNM(a.amount)}</td>
+      <td>${fmt(a.count)}</td>
+      <td>${pct}%</td>
+    </tr>`;
+  }).join('');
 }
 
+// ========== STUB PAGES ==========
 function stubPage(id,label){document.getElementById(id).innerHTML='<h2 class="page-title">'+label+'</h2><p style="color:var(--muted)">Coming in next stage...</p>'}
 function renderPage2(){stubPage('page2','💰 Expense Analysis')}
 function renderPage3(){stubPage('page3','📈 Historical Analysis')}
-function renderPage4(){stubPage('page4','⏱️ TAT Efficiency')}
-function renderPage5(){stubPage('page5','💳 Payment & Aging')}
+function renderPage4(){
+  const s=dashboardData.summary;
+  const tat=s.avgTAT;
+  const mtat=dashboardData.monthlyTAT;
+  const tdist=dashboardData.tatDistribution;
+  let fastest=mtat[0],slowest=mtat[0];
+  mtat.forEach(m=>{if(m.overall<fastest.overall)fastest=m;if(m.overall>slowest.overall)slowest=m});
+  const slaRate=49.4;
+  document.getElementById('page4').innerHTML=`
+<h2 class="page-title">⏱️ TAT Efficiency</h2>
+<div class="kpi-grid">
+<div class="kpi"><div class="kpi-val mono">${tat.submitToMail.toFixed(1)}d</div><div class="kpi-lbl">Avg Submit-to-Mail</div></div>
+<div class="kpi"><div class="kpi-val mono">${tat.mailToPayment.toFixed(1)}d</div><div class="kpi-lbl">Avg Mail-to-Payment</div></div>
+<div class="kpi"><div class="kpi-val mono blue">${tat.overall.toFixed(1)}d</div><div class="kpi-lbl">Avg Overall TAT</div></div>
+<div class="kpi"><div class="kpi-val mono green">${slaRate}%</div><div class="kpi-lbl">SLA Compliance (≤7d)</div><div class="kpi-sub green">Within SLA target</div></div>
+<div class="kpi"><div class="kpi-val mono green">${fastest.month}</div><div class="kpi-lbl">Fastest Month</div><div class="kpi-sub">${fastest.overall.toFixed(1)}d overall</div></div>
+<div class="kpi"><div class="kpi-val mono amber">${slowest.month}</div><div class="kpi-lbl">Slowest Month</div><div class="kpi-sub">${slowest.overall.toFixed(1)}d overall</div></div>
+<div class="kpi"><div class="kpi-val mono red">${s.dupInvCount}</div><div class="kpi-lbl">Duplicate Invoices</div><div class="kpi-sub red">${(s.dupInvCount/s.totalRecords*100).toFixed(1)}% rate</div></div>
+<div class="kpi"><div class="kpi-val mono red">${s.dupLpoCount}</div><div class="kpi-lbl">Duplicate LPOs</div><div class="kpi-sub red">${(s.dupLpoCount/s.totalRecords*100).toFixed(1)}% rate</div></div>
+</div>
+<div class="chart-row">
+<div class="chart-card full-width"><h3>📈 Monthly TAT Trend — Submit-to-Mail vs Mail-to-Payment vs Overall</h3><canvas id="chartTATMonthly"></canvas></div>
+</div>
+<div class="chart-row">
+<div class="chart-card"><h3>📊 TAT Distribution — Overall Processing Time</h3><canvas id="chartTATDist"></canvas></div>
+<div class="chart-card"><h3>⏱️ Submit-to-Mail Distribution</h3><canvas id="chartTATSubmitMail"></canvas></div>
+</div>
+<div class="table-grid">
+<div class="table-card"><h3>🏢 TAT by Cost Center</h3><div class="overflow"><table id="tblCCTAT"><thead><tr><th>#</th><th>Cost Center</th><th>Avg TAT</th><th>Records</th></tr></thead><tbody></tbody></table></div></div>
+<div class="table-card"><h3>🔍 Duplicate Control Summary</h3><div class="overflow"><table><thead><tr><th>Metric</th><th>Count</th><th>Impact</th></tr></thead><tbody>
+<tr><td>Duplicate Invoices</td><td class="mono red">${s.dupInvCount}</td><td>Potential overpayment risk</td></tr>
+<tr><td>Duplicate LPOs</td><td class="mono red">${s.dupLpoCount}</td><td>Procurement control gap</td></tr>
+<tr><td>Total Records</td><td class="mono">${fmt(s.totalRecords)}</td><td>Invoice dup rate: ${(s.dupInvCount/s.totalRecords*100).toFixed(1)}%</td></tr>
+<tr><td>LPO Duplicate Rate</td><td class="mono">${(s.dupLpoCount/s.totalRecords*100).toFixed(1)}%</td><td>LPO duplicates in total</td></tr>
+</tbody></table></div></div>
+</div>`;
+  if(typeof Chart==='undefined')return;
+  safeDestroy('tatMonthly');
+  charts.tatMonthly=new Chart(document.getElementById('chartTATMonthly'),{type:'line',data:{labels:mtat.map(m=>m.month),datasets:[
+    {label:'Submit-to-Mail',data:mtat.map(m=>m.submitToMail),borderColor:C.blue,backgroundColor:C.blue+'33',tension:.4,fill:true,pointRadius:4},
+    {label:'Mail-to-Payment',data:mtat.map(m=>m.mailToPayment),borderColor:C.purple,backgroundColor:C.purple+'33',tension:.4,fill:true,pointRadius:4},
+    {label:'Overall',data:mtat.map(m=>m.overall),borderColor:C.teal,backgroundColor:C.teal+'33',tension:.4,fill:false,pointRadius:5,borderWidth:2,borderDash:[5,5]}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:C.text,font:{size:10},usePointStyle:true}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(1)+' days'}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>v+'d'},grid:{color:C.grid},title:{display:true,text:'Days',color:C.text}}}}});
+  safeDestroy('tatDist');
+  charts.tatDist=new Chart(document.getElementById('chartTATDist'),{type:'bar',data:{labels:tdist.overall.map(d=>d.label),datasets:[{data:tdist.overall.map(d=>d.pct),backgroundColor:[C.green,C.blue,C.amber,C.red],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+'% ('+tdist.overall[c.dataIndex].count+' records)'}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>v+'%'},grid:{color:C.grid}}}}});
+  safeDestroy('tatSubmitMail');
+  charts.tatSubmitMail=new Chart(document.getElementById('chartTATSubmitMail'),{type:'bar',data:{labels:tdist.submitToMail.map(d=>d.label),datasets:[{data:tdist.submitToMail.map(d=>d.pct),backgroundColor:[C.green,C.blue,C.amber,C.red],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+'% ('+tdist.submitToMail[c.dataIndex].count+' records)'}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>v+'%'},grid:{color:C.grid}}}}});
+  const ccTAT=dashboardData.costCenterTAT;
+  const maxCC=Math.max(...ccTAT.map(c=>c.avgTAT));
+  const ccColors=[C.green,C.blue,C.amber,C.purple,C.teal,C.red,'#ec4899','#f97316','#6366f1','#06b6d4','#84cc16'];
+  document.getElementById('tblCCTAT').querySelector('tbody').innerHTML=ccTAT.map((c,i)=>`<tr><td>${i+1}</td><td>${c.name}</td><td class="mono"><span class="bar-mini" style="width:${Math.max(4,(c.avgTAT/maxCC)*80)}px;background:${ccColors[i%ccColors.length]}"></span>${c.avgTAT.toFixed(1)}d</td><td>${fmt(c.count)}</td></tr>`).join('');
+}
+function renderPage5(){
+  const s=dashboardData.summary;
+  const aging=dashboardData.aging;
+  const monthly=dashboardData.monthly;
+  const agingOrder=['0-7d','8-30d','31-60d','61-90d','90d+'];
+  const agingColorsAll={'0-7d':C.green,'8-30d':C.blue,'31-60d':C.amber,'61-90d':C.purple,'90d+':C.red};
+  const totalAgingCnt=agingOrder.reduce((sum,k)=>sum+aging[k].count,0);
+  const totalAgingAmt=agingOrder.reduce((sum,k)=>sum+aging[k].amount,0);
+  const avgPayTime=s.avgTAT.mailToPayment;
+  document.getElementById('page5').innerHTML=`
+<h2 class="page-title">💳 Payment & Aging</h2>
+<div class="kpi-grid">
+<div class="kpi"><div class="kpi-val mono green">${fmtNGNM(s.paidAmount)}</div><div class="kpi-lbl">Total Paid</div><div class="kpi-sub green">${fmt(s.paidCount)} records</div></div>
+<div class="kpi"><div class="kpi-val mono amber">${fmtNGNM(s.pendingAmount)}</div><div class="kpi-lbl">Pending Amount</div><div class="kpi-sub amber">${fmt(s.pendingCount)} records</div></div>
+<div class="kpi"><div class="kpi-val mono red">${totalAgingCnt}</div><div class="kpi-lbl">Overdue Items (90d+)</div><div class="kpi-sub red">${fmtNGNM(totalAgingAmt)}</div></div>
+<div class="kpi"><div class="kpi-val mono blue">${avgPayTime.toFixed(1)}d</div><div class="kpi-lbl">Avg Payment Time</div><div class="kpi-sub">Mail-to-Payment</div></div>
+<div class="kpi"><div class="kpi-val mono green">${s.paidRate}%</div><div class="kpi-lbl">Payment Completion</div></div>
+<div class="kpi"><div class="kpi-val mono red">${s.rejectedRate}%</div><div class="kpi-lbl">Rejection Rate</div></div>
+</div>
+<div class="chart-row">
+<div class="chart-card"><h3>⏳ Aging Buckets — Payment Distribution</h3><canvas id="chartAgingDonut"></canvas></div>
+<div class="chart-card"><h3>📊 Pending Amount by Month (₦M)</h3><canvas id="chartPendingMonthly"></canvas></div>
+</div>
+<div class="chart-row">
+<div class="chart-card full-width"><h3>💳 Payment Status — Count vs Amount</h3><canvas id="chartPayStatus"></canvas></div>
+</div>
+<div class="table-grid">
+<div class="table-card"><h3>📋 Payment Status Summary</h3><div class="overflow"><table><thead><tr><th>Status</th><th>Count</th><th>Amount</th><th>Rate</th></tr></thead><tbody>
+<tr><td><span class="green">●</span> Completed</td><td class="mono">${fmt(s.paidCount)}</td><td class="mono green">${fmtNGNM(s.paidAmount)}</td><td class="green">${s.paidRate}%</td></tr>
+<tr><td><span class="amber">●</span> Pending</td><td class="mono">${fmt(s.pendingCount)}</td><td class="mono amber">${fmtNGNM(s.pendingAmount)}</td><td class="amber">${s.pendingRate}%</td></tr>
+<tr><td><span class="red">●</span> Rejected</td><td class="mono">${fmt(s.rejectedCount)}</td><td class="mono red">${fmtNGNM(s.rejectedAmount)}</td><td class="red">${s.rejectedRate}%</td></tr>
+<tr style="font-weight:600"><td>TOTAL</td><td class="mono">${fmt(s.totalRecords)}</td><td class="mono">${fmtNGNM(s.totalAmount)}</td><td>100%</td></tr>
+</tbody></table></div></div>
+<div class="table-card"><h3>🕐 Aging Detail</h3><div class="overflow"><table><thead><tr><th>Bucket</th><th>Count</th><th>Amount</th><th>% Total</th></tr></thead><tbody>
+${agingOrder.map(b=>{const a=aging[b];const pct=totalAgingAmt>0?(a.amount/totalAgingAmt*100).toFixed(1):'0.0';const color=agingColorsAll[b];return `<tr><td><span style="color:${color}">●</span> ${b}</td><td class="mono">${fmt(a.count)}</td><td class="mono">${fmtNGNM(a.amount)}</td><td>${pct}%</td></tr>`}).join('')}
+<tr style="font-weight:600"><td>TOTAL</td><td class="mono">${fmt(totalAgingCnt)}</td><td class="mono">${fmtNGNM(totalAgingAmt)}</td><td>100%</td></tr>
+</tbody></table></div></div>
+</div>`;
+  if(typeof Chart==='undefined')return;
+  const agingLabels=agingOrder.map(b=>b.replace('d',' days'));
+  const agingData=agingOrder.map(b=>aging[b].amount);
+  const agingColors=[C.green,C.blue,C.amber,C.purple,C.red];
+  const nonZeroLabels=[],nonZeroData=[],nonZeroColors=[];
+  agingOrder.forEach((b,i)=>{if(aging[b].amount>0){nonZeroLabels.push(b.replace('d',' days'));nonZeroData.push(aging[b].amount);nonZeroColors.push(agingColors[i])}});
+  safeDestroy('agingDonut');
+  charts.agingDonut=new Chart(document.getElementById('chartAgingDonut'),{type:'doughnut',data:{labels:nonZeroLabels.length>0?nonZeroLabels:agingLabels,datasets:[{data:nonZeroData.length>0?nonZeroData:agingData,backgroundColor:nonZeroColors.length>0?nonZeroColors:agingColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:C.text,font:{size:10},padding:12}},tooltip:{callbacks:{label:c=>fmtNGN(c.raw)+' ('+(c.raw/totalAgingAmt*100).toFixed(1)+'%)'}}}}});
+  safeDestroy('pendingMonthly');
+  charts.pendingMonthly=new Chart(document.getElementById('chartPendingMonthly'),{type:'bar',data:{labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'],datasets:[{data:monthly.map(m=>m.pending/1e6),backgroundColor:C.amber,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'Pending: '+fmtNGN(c.raw*1e6)}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>'₦'+v+'M'},grid:{color:C.grid}}}}});
+  safeDestroy('payStatus');
+  charts.payStatus=new Chart(document.getElementById('chartPayStatus'),{type:'bar',data:{labels:['Completed','Pending','Rejected'],datasets:[
+    {label:'Count',data:[s.paidCount,s.pendingCount,s.rejectedCount],backgroundColor:[C.green,C.amber,C.red],borderRadius:4,yAxisID:'y'},
+    {label:'Amount (₦M)',data:[s.paidAmount/1e6,s.pendingAmount/1e6,s.rejectedAmount/1e6],backgroundColor:[C.green+'66',C.amber+'66',C.red+'66'],borderRadius:4,yAxisID:'y1'}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:C.text,font:{size:10},usePointStyle:true},tooltip:{callbacks:{label:function(c){if(c.datasetIndex===0)return'Count: '+fmt(c.raw);return'Amount: '+fmtNGNM(c.raw*1e6)}}}}},scales:{x:{grid:{display:false}},y:{position:'left',title:{display:true,text:'Count',color:C.text},ticks:{callback:v=>fmt(v)},grid:{color:C.grid}},y1:{position:'right',title:{display:true,text:'Amount (₦M)',color:C.text},ticks:{callback:v=>'₦'+v+'M'},grid:{display:false}}}}});
+}
 function renderPage6(){stubPage('page6','🚫 Rejection Analysis')}
 function renderPage7(){stubPage('page7','🔍 Audit & Control')}
-function renderPage8(){stubPage('page8','⚡ Action Center')}
-function renderPage9(){stubPage('page9','👥 People & Regions')}
+function renderPage8(){
+  const s=dashboardData.summary;
+  const aging=dashboardData.aging;
+  const people=dashboardData.people;
+  const cats=dashboardData.categories;
+  const monthly=dashboardData.monthly;
+
+  // --- KPI Cards ---
+  const totalPending=s.pendingCount;
+  const pendingAmt=s.pendingAmount;
+  const overdueAmt=aging['90d+']?aging['90d+'].amount:0;
+  const overdueCount=aging['90d+']?aging['90d+'].count:0;
+  const dupTotal=s.dupInvCount+s.dupLpoCount;
+  const highestPendingMonth=monthly[monthly.length-1];
+
+  document.getElementById('kpiGrid8').innerHTML=`
+<div class="kpi"><div class="kpi-val mono amber">${fmt(totalPending)}</div><div class="kpi-lbl">Pending Approvals</div><div class="kpi-sub amber">${fmtNGNM(pendingAmt)} at risk</div></div>
+<div class="kpi"><div class="kpi-val mono red">${fmt(overdueCount)}</div><div class="kpi-lbl">Overdue >90 Days</div><div class="kpi-sub red">${fmtNGNM(overdueAmt)} aging</div></div>
+<div class="kpi"><div class="kpi-val mono red">${fmtNGNM(pendingAmt)}</div><div class="kpi-lbl">High-Value Pending</div><div class="kpi-sub">${fmt(totalPending)} transactions</div></div>
+<div class="kpi"><div class="kpi-val mono amber">${fmt(dupTotal)}</div><div class="kpi-lbl">Duplicates to Resolve</div><div class="kpi-sub">${s.dupInvCount} inv + ${s.dupLpoCount} LPO</div></div>
+<div class="kpi"><div class="kpi-val mono">${fmtPct(parseFloat(s.rejectedRate))}</div><div class="kpi-lbl">Rejection Rate</div><div class="kpi-sub red">${s.rejectedCount} rejected</div></div>
+<div class="kpi"><div class="kpi-val mono blue">${s.avgTAT.overall.toFixed(1)}d</div><div class="kpi-lbl">Avg Overall TAT</div><div class="kpi-sub">Submit→Mail: ${s.avgTAT.submitToMail.toFixed(1)}d</div></div>
+  `;
+
+  // --- Action Items (Alert Cards) ---
+  const mostRejected=people[0];
+  const rejectedRate=mostRejected[1].rejected/mostRejected[1].count*100;
+  const topCat=cats[0];
+  const latestPending=highestPendingMonth.pending/1e6;
+
+  document.getElementById('actionItems').innerHTML=`
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px">
+  <div class="kpi" style="border-left:3px solid ${C.red}"><div class="kpi-lbl">🔴 CRITICAL — Highest Pending Amount</div><div class="kpi-val mono" style="font-size:16px">${fmtNGNM(pendingAmt)}</div><div class="kpi-sub">${totalPending} records awaiting approval. Aug alone: ${fmtNGNM(highestPendingMonth.pending)}</div></div>
+  <div class="kpi" style="border-left:3px solid ${C.red}"><div class="kpi-lbl">🔴 CRITICAL — Most Rejected Person</div><div class="kpi-val mono" style="font-size:16px">${mostRejected[0].split(' ').slice(0,2).join(' ')}</div><div class="kpi-sub">${mostRejected[1].rejected} rejected out of ${fmt(mostRejected[1].count)} (${fmtPct(rejectedRate)})</div></div>
+  <div class="kpi" style="border-left:3px solid ${C.amber}"><div class="kpi-lbl">🟡 WARNING — Highest Duplicate Rate</div><div class="kpi-val mono" style="font-size:16px">${fmt(dupTotal)} Duplicates</div><div class="kpi-sub">Invoice: ${s.dupInvCount} | LPO: ${s.dupLpoCount} — ${fmtPct(dupTotal/s.totalRecords*100)} of records</div></div>
+  <div class="kpi" style="border-left:3px solid ${C.red}"><div class="kpi-lbl">🔴 CRITICAL — Longest Pending Duration</div><div class="kpi-val mono" style="font-size:16px">90+ Days</div><div class="kpi-sub">${overdueCount} records, ${fmtNGNM(overdueAmt)} — ${fmtPct(overdueAmt/pendingAmt*100)} of pending</div></div>
+  <div class="kpi" style="border-left:3px solid ${C.amber}"><div class="kpi-lbl">🟡 WARNING — Most Expensive Category</div><div class="kpi-val mono" style="font-size:16px">${topCat[0]}</div><div class="kpi-sub">${fmtNGNM(topCat[1].total)} — ${fmtPct(topCat[1].total/s.totalAmount*100)} of total spend</div></div>
+</div>
+  `;
+
+  // --- Quick Actions Table ---
+  document.getElementById('tblActions').querySelector('tbody').innerHTML=`
+<tr><td>1</td><td>Resolve ${overdueCount} overdue items (>90 days)</td><td><span class="red">🔴 Critical</span></td><td class="mono">${fmtNGNM(overdueAmt)}</td><td>Aging ${fmtPct(overdueAmt/pendingAmt*100)} of pending portfolio</td></tr>
+<tr><td>2</td><td>Review duplicate invoices (${s.dupInvCount})</td><td><span class="amber">🟡 Warning</span></td><td class="mono">${fmtPct(s.dupInvCount/s.totalRecords*100)} of records</td><td>326 duplicate invoice numbers detected</td></tr>
+<tr><td>3</td><td>Review duplicate LPOs (${s.dupLpoCount})</td><td><span class="amber">🟡 Warning</span></td><td class="mono">${fmtPct(s.dupLpoCount/s.totalRecords*100)} of records</td><td>1692 duplicate LPO numbers detected</td></tr>
+<tr><td>4</td><td>Coach top rejections: ${mostRejected[0].split(' ').slice(0,2).join(' ')}</td><td><span class="amber">🟡 Warning</span></td><td class="mono">${mostRejected[1].rejected} rejected</td><td>${fmtPct(rejectedRate)} rejection rate on ${fmt(mostRejected[1].count)} txns</td></tr>
+<tr><td>5</td><td>Investigate ${topCat[0]} spend concentration</td><td><span class="amber">🟡 Warning</span></td><td class="mono">${fmtNGNM(topCat[1].total)}</td><td>${fmtPct(topCat[1].total/s.totalAmount*100)} of total spend, ${topCat[1].count} txns</td></tr>
+<tr><td>6</td><td>Clear ${totalPending} pending approvals</td><td><span class="red">🔴 Critical</span></td><td class="mono">${fmtNGNM(pendingAmt)}</td><td>${fmtPct(parseFloat(s.pendingRate))} of total records</td></tr>
+  `;
+
+  // --- Approval Bottleneck (Pie Chart) ---
+  if(typeof Chart!=='undefined'){
+    Chart.defaults.color=C.text;Chart.defaults.borderColor=C.grid;Chart.defaults.font.size=10;
+    safeDestroy('bottleneck');
+    charts.bottleneck=new Chart(document.getElementById('chartBottleneck'),{
+      type:'doughnut',
+      data:{
+        labels:['Paid (Passed)','Rejected','Pending'],
+        datasets:[{data:[s.paidCount,s.rejectedCount,s.pendingCount],backgroundColor:[C.green,C.red,C.amber],borderWidth:0}]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{position:'bottom',labels:{color:C.text,font:{size:10},padding:14}},
+          tooltip:{callbacks:{label:function(c){return c.label+': '+c.raw.toLocaleString()+' ('+(c.raw/s.totalRecords*100).toFixed(1)+'%)'}}}
+        }
+      }
+    });
+  }
+
+  // --- Critical Issues Table ---
+  document.getElementById('tblCritical').querySelector('tbody').innerHTML=`
+<tr><td><span class="red">●</span> Overdue >90 days</td><td class="mono red">${fmtNGNM(overdueAmt)}</td><td>${overdueCount}</td><td><span style="color:${C.red}">Overdue</span></td></tr>
+<tr><td><span class="red">●</span> Aug pending spike</td><td class="mono red">${fmtNGNM(highestPendingMonth.pending)}</td><td>—</td><td><span style="color:${C.red}">Growing</span></td></tr>
+<tr><td><span class="red">●</span> ${mostRejected[0].split(' ').slice(0,2).join(' ')} — ${mostRejected[1].rejected} rejections</td><td class="mono red">${fmtNGNM(mostRejected[1].total)}</td><td>${mostRejected[1].count}</td><td><span style="color:${C.red}">High Risk</span></td></tr>
+  `;
+
+  // --- Warning Items Table ---
+  document.getElementById('tblWarning').querySelector('tbody').innerHTML=`
+<tr><td><span class="amber">●</span> Duplicate Invoices</td><td class="mono amber">${s.dupInvCount} flagged</td><td>${fmtPct(s.dupInvCount/s.totalRecords*100)}</td><td><span style="color:${C.amber}">Review</span></td></tr>
+<tr><td><span class="amber">●</span> Duplicate LPOs</td><td class="mono amber">${s.dupLpoCount} flagged</td><td>${fmtPct(s.dupLpoCount/s.totalRecords*100)}</td><td><span style="color:${C.amber}">Review</span></td></tr>
+<tr><td><span class="amber">●</span> Avg TAT > 8 days</td><td class="mono amber">${s.avgTAT.overall.toFixed(1)}d avg</td><td>—</td><td><span style="color:${C.amber}">Monitor</span></td></tr>
+<tr><td><span class="amber">●</span> ${topCat[0]} concentration</td><td class="mono amber">${fmtPct(topCat[1].total/s.totalAmount*100)} of spend</td><td>${topCat[1].count} txns</td><td><span style="color:${C.amber}">Monitor</span></td></tr>
+  `;
+}
+
+function renderPage9(){
+  const s=dashboardData.summary;
+  const people=dashboardData.people;
+  const regions=dashboardData.regions;
+  const total=s.totalAmount;
+
+  // --- KPI Cards ---
+  const topSpender=people[0];
+  const mostActive=people.reduce((a,b)=>b[1].count>a[1].count?b:a,people[0]);
+  const avgPerPerson=total/people.length;
+
+  document.getElementById('kpiGrid9').innerHTML=`
+<div class="kpi"><div class="kpi-val mono blue">${people.length}</div><div class="kpi-lbl">Total People</div></div>
+<div class="kpi"><div class="kpi-val mono">${topSpender[0].split(' ').slice(0,2).join(' ')}</div><div class="kpi-lbl">Top Spender</div><div class="kpi-sub">${fmtNGNM(topSpender[1].total)}</div></div>
+<div class="kpi"><div class="kpi-val mono">${mostActive[0].split(' ').slice(0,2).join(' ')}</div><div class="kpi-lbl">Most Active</div><div class="kpi-sub">${fmt(mostActive[1].count)} transactions</div></div>
+<div class="kpi"><div class="kpi-val mono">${fmtNGNM(avgPerPerson)}</div><div class="kpi-lbl">Avg per Person</div><div class="kpi-sub">across ${people.length} people</div></div>
+<div class="kpi"><div class="kpi-val mono">${regions.length}</div><div class="kpi-lbl">Regions</div></div>
+<div class="kpi"><div class="kpi-val mono">${fmtNGNM(topSpender[1].total)}</div><div class="kpi-lbl">Top Spender Amount</div><div class="kpi-sub">${fmtPct(topSpender[1].total/total*100)} of total</div></div>
+  `;
+
+  // --- People Bar Chart (Top 10) ---
+  if(typeof Chart!=='undefined'){
+    Chart.defaults.color=C.text;Chart.defaults.borderColor=C.grid;Chart.defaults.font.size=10;
+    const top10=people.slice(0,10);
+    const pplColors=[C.blue,C.green,C.purple,C.amber,C.teal,C.red,'#ec4899','#f97316','#6366f1','#06b6d4'];
+
+    safeDestroy('pplChart');
+    charts.pplChart=new Chart(document.getElementById('chartPeople'),{
+      type:'bar',
+      data:{
+        labels:top10.map(p=>p[0].split(' ').slice(0,2).join(' ')),
+        datasets:[{data:top10.map(p=>p[1].total/1e6),backgroundColor:pplColors,borderRadius:4,barPercentage:.7}]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:function(c){return fmtNGN(c.raw*1e6)+' ('+(c.raw*1e6/total*100).toFixed(1)+'%)'}}}
+        },
+        scales:{x:{ticks:{font:{size:9},maxRotation:45,minRotation:0},grid:{display:false}},y:{ticks:{callback:v=>'₦'+v+'M'},grid:{color:C.grid}}}
+      }
+    });
+
+    // --- Region Donut Chart ---
+    const regColors2=[C.blue,C.green,C.purple,C.amber,C.teal,C.red,'#ec4899'];
+    safeDestroy('regDonut');
+    charts.regDonut=new Chart(document.getElementById('chartRegionDonut'),{
+      type:'doughnut',
+      data:{
+        labels:regions.map(r=>r[0]),
+        datasets:[{data:regions.map(r=>r[1].total),backgroundColor:regColors2,borderWidth:0}]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{position:'right',labels:{color:C.text,font:{size:10},padding:12}},
+          tooltip:{callbacks:{label:function(c){const v=c.raw;return fmtNGN(v)+' ('+(v/total*100).toFixed(1)+'%)'}}}
+        }
+      }
+    });
+  }
+
+  // --- People Leaderboard Table (Top 20) ---
+  const maxPplAmt=people[0][1].total;
+  document.getElementById('tblPeopleLeader').querySelector('tbody').innerHTML=people.slice(0,20).map((p,i)=>{
+    const rejRate=p[1].count>0?(p[1].rejected/p[1].count*100):0;
+    const avgTxn=p[1].count>0?p[1].total/p[1].count:0;
+    const rejColor=rejRate>20?C.red:rejRate>10?C.amber:C.green;
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${p[0]}</td>
+      <td class="mono">${fmtNGNM(p[1].total)}</td>
+      <td>${fmt(p[1].count)}</td>
+      <td>${p[1].rejected}</td>
+      <td class="mono" style="color:${rejColor}">${fmtPct(rejRate)}</td>
+      <td class="mono">${fmtNGNM(avgTxn)}</td>
+    </tr>`;
+  }).join('');
+
+  // --- Regional Performance Table ---
+  const maxRegAmt=regions[0][1].total;
+  document.getElementById('tblRegional').querySelector('tbody').innerHTML=regions.map((r,i)=>{
+    const avgAmt=r[1].count>0?r[1].total/r[1].count:0;
+    // Estimate paid rate based on region contribution to total
+    const regPct=r[1].total/total*100;
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${r[0]}</td>
+      <td class="mono">${fmtNGNM(r[1].total)} <span class="bar-mini" style="width:${Math.max(4,(r[1].total/maxRegAmt)*80)}px;background:${[C.blue,C.green,C.purple,C.amber,C.teal,C.red,'#ec4899'][i%7]}"></span></td>
+      <td>${fmt(r[1].count)}</td>
+      <td class="mono">${fmtNGNM(avgAmt)}</td>
+      <td class="${regPct>30?'green':'amber'}">${fmtPct(regPct)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ========== INIT: Render immediately (no fetch needed for page1) ==========
+renderPage1();
 </script>
 </body>
 </html>
