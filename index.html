@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NG Shop Expense Dashboard — Diesel & Electricity</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #1a1a2e; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+  .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: #fff; padding: 30px; border-radius: 12px; margin-bottom: 24px; }
+  .header h1 { font-size: 28px; margin-bottom: 4px; }
+  .header .subtitle { color: #8892b0; font-size: 14px; }
+  .header .meta { display: flex; gap: 30px; margin-top: 16px; flex-wrap: wrap; }
+  .header .meta-item { text-align: center; }
+  .header .meta-value { font-size: 24px; font-weight: 700; color: #e94560; }
+  .header .meta-label { font-size: 12px; color: #8892b0; }
+  
+  .section { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .section h2 { font-size: 20px; color: #0f3460; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #e94560; }
+  .section h3 { font-size: 16px; color: #533483; margin: 20px 0 12px; }
+  
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+  .stat-card { background: #f8f9fa; border-radius: 8px; padding: 16px; text-align: center; border-left: 4px solid #0f3460; }
+  .stat-card.diesel { border-left-color: #e94560; }
+  .stat-card.electric { border-left-color: #533483; }
+  .stat-card.combined { border-left-color: #0f3460; }
+  .stat-card .stat-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-card .stat-value { font-size: 22px; font-weight: 700; margin: 4px 0; }
+  .stat-card .stat-sub { font-size: 12px; color: #999; }
+  
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #0f3460; color: #fff; padding: 10px 12px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
+  th.num { text-align: right; }
+  td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+  td.num { text-align: right; font-family: 'SF Mono', 'Consolas', monospace; font-size: 12px; }
+  td.shop-name { font-weight: 600; }
+  td.paid { color: #0d9488; }
+  td.unpaid { color: #f59e0b; }
+  td.rejected { color: #ef4444; }
+  td.total-col { font-weight: 700; color: #0f3460; }
+  tr:hover { background: #f8f9ff; }
+  tr.total-row { background: #e8ecf4; font-weight: 700; }
+  tr.total-row td { border-top: 2px solid #0f3460; font-weight: 700; }
+  
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .tab { padding: 8px 20px; border: none; background: #e8ecf4; cursor: pointer; border-radius: 6px 6px 0 0; font-size: 13px; font-weight: 500; }
+  .tab.active { background: #0f3460; color: #fff; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  
+  .chart-container { margin: 20px 0; }
+  .bar { display: flex; align-items: center; margin-bottom: 6px; font-size: 12px; }
+  .bar-label { width: 200px; text-align: right; padding-right: 10px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; background: #eee; border-radius: 4px; height: 22px; position: relative; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; color: #fff; font-weight: 600; font-size: 11px; }
+  .bar-fill.diesel { background: linear-gradient(90deg, #e94560, #c23152); }
+  .bar-fill.electric { background: linear-gradient(90deg, #533483, #3b1f66); }
+  .bar-fill.combined { background: linear-gradient(90deg, #0f3460, #16213e); }
+  
+  .footer { text-align: center; color: #999; font-size: 12px; padding: 20px; }
+  
+  @media (max-width: 768px) {
+    .bar-label { width: 120px; font-size: 11px; }
+    table { font-size: 11px; }
+    th, td { padding: 6px 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>⚡ NG Shop Expense Dashboard</h1>
+    <div class="subtitle">Diesel Purchase & Electricity Bill Analysis by Shop | Data Source: NG FN Report → Expense Import</div>
+    <div class="meta">
+      <div class="meta-item"><div class="meta-value">10</div><div class="meta-label">Shops</div></div>
+      <div class="meta-item"><div class="meta-value">NGN 430,929,817</div><div class="meta-label">Total Diesel</div></div>
+      <div class="meta-item"><div class="meta-value">NGN 5,643,165</div><div class="meta-label">Total Electric Bill</div></div>
+      <div class="meta-item"><div class="meta-value">NGN 436,572,982</div><div class="meta-label">Grand Total</div></div>
+      <div class="meta-item"><div class="meta-value">415</div><div class="meta-label">Total Records</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>📊 Combined Overview — Diesel + Electricity by Shop</h2>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>Shop</th><th class="num">Diesel Total</th><th class="num">Electric Bill Total</th><th class="num">Combined Total</th><th class="num">Paid</th><th class="num">Unpaid/Pending</th></tr>
+        </thead>
+        <tbody>
+          
+    <tr>
+      <td class="shop-name">Carlcare-cv</td>
+      <td class="num">NGN 243,314,250</td>
+      <td class="num">NGN 0</td>
+      <td class="num total-col">NGN 243,314,250</td>
+      <td class="num paid">NGN 223,381,500</td>
+      <td class="num unpaid">NGN 12,945,000</td>
+    </tr>
+    <tr>
+      <td class="shop-name">Carlcare-Kano</td>
+      <td class="num">NGN 37,492,814</td>
+      <td class="num">NGN 116,000</td>
+      <td class="num total-col">NGN 37,608,814</td>
+      <td class="num paid">NGN 35,808,814</td>
+      <td class="num unpaid">NGN 1,800,000</td>
+    </tr>
+    <tr>
+      <td class="shop-name">Carlcare-Abuja</td>
+      <td class="num">NGN 36,174,600</td>
+      <td class="num">NGN 0</td>
+      <td class="num total-col">NGN 36,174,600</td>
+      <td class="num paid">NGN 33,936,400</td>
+      <td class="num unpaid">NGN 1,088,200</td>
+    </tr>
+    <tr>
+      <td class="shop-name">Carlcare-Ibadan</td>
+      <td class="num">NGN 31,542,500</td>
+      <td class="num">NGN 0</td>
+      <td class="num total-col">NGN 31,542,500</td>
+      <td class="num paid">NGN 30,382,500</td>
+      <td class="num unpaid">NGN 0</td>
+    </tr>
+    <tr>
+      <td class="shop-name">Carlcare-Onitsha</td>
+      <td class="num">NGN 24,721,000</td>
+      <td class="num">NGN 211,000</td>
+      <td class="num total-col">NGN 24,932,000</td>
+      <td class="num paid">NGN 20,660,000</td>
+      <td class="num unpaid">NGN 2,696,500</td>
+    </tr>
+    <tr>
+      <td class="shop-name">Carlcare-PHC</td>
+      <td class="num">NGN 14,426,150</td>
+      <td class="num">NGN 3,829,000</td>
+      <td class="num total-col">NGN 18,255,150</td>
+      <td class="num paid">NGN 16,063,750</td>
+      <td class="num unpaid">NGN 1,003,400</td>
+    </tr>
+    <tr>
+      <td class="shop-name">Carlcare-Benin</td>
+      <td class="num">NGN 16,690,500</td>
+      <td class="num">NGN 777,000</td>
+      <td class="num total-col">NGN 17,467,500</td>
+      <td class="num paid">NGN 14,216,200</td>
+      <td class="num unpaid">NGN 2,176,300</td>
+    </tr>
+    <tr>
+      <td class="shop-name">MWH</td>
+      <td class="num">NGN 15,267,750</td>
+      <td class="num">NGN 15,000</td>
+      <td class="num total-col">NGN 15,282,750</td>
+      <td class="num paid">NGN 13,572,750</td>
+      <td class="num unpaid">NGN 0</td>
+    </tr>
+    <tr>
+      <td class="shop-name">Carlcare-Warri</td>
+      <td class="num">NGN 11,300,253</td>
+      <td class="num">NGN 680,165</td>
+      <td class="num total-col">NGN 11,980,418</td>
+      <td class="num paid">NGN 10,334,848</td>
+      <td class="num unpaid">NGN 223,870</td>
+    </tr>
+    <tr>
+      <td class="shop-name">Carlcare-VI</td>
+      <td class="num">NGN 0</td>
+      <td class="num">NGN 15,000</td>
+      <td class="num total-col">NGN 15,000</td>
+      <td class="num paid">NGN 15,000</td>
+      <td class="num unpaid">NGN 0</td>
+    </tr>
+          <tr class="total-row">
+            <td>TOTAL (10 shops)</td>
+            <td class="num">NGN 430,929,817</td>
+            <td class="num">NGN 5,643,165</td>
+            <td class="num total-col">NGN 436,572,982</td>
+            <td class="num paid">NGN 398,371,762</td>
+            <td class="num unpaid">NGN 21,933,270</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>🔴 Diesel Purchase — Detailed Breakdown</h2>
+    <div class="stats-row">
+      <div class="stat-card diesel">
+        <div class="stat-label">Total Diesel Spend</div>
+        <div class="stat-value">NGN 430,929,817</div>
+        <div class="stat-sub">353 records</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Paid</div>
+        <div class="stat-value" style="color:#0d9488">NGN 393,352,467</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Unpaid/Pending</div>
+        <div class="stat-value" style="color:#f59e0b">NGN 21,529,400</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Rejected</div>
+        <div class="stat-value" style="color:#ef4444">NGN 16,047,950</div>
+      </div>
+    </div>
+    
+    <h3>Top 10 Shops by Diesel Spend</h3>
+    <div class="chart-container">
+      <div class="bar">
+          <div class="bar-label" title="Carlcare-cv">Carlcare-cv</div>
+          <div class="bar-track">
+            <div class="bar-fill diesel" style="width:100%">NGN 243,314,250</div>
+          </div>
+        </div><div class="bar">
+          <div class="bar-label" title="Carlcare-Kano">Carlcare-Kano</div>
+          <div class="bar-track">
+            <div class="bar-fill diesel" style="width:15%">NGN 37,492,814</div>
+          </div>
+        </div><div class="bar">
+          <div class="bar-label" title="Carlcare-Abuja">Carlcare-Abuja</div>
+          <div class="bar-track">
+            <div class="bar-fill diesel" style="width:15%">NGN 36,174,600</div>
+          </div>
+        </div><div class="bar">
+          <div class="bar-label" title="Carlcare-Ibadan">Carlcare-Ibadan</div>
+          <div class="bar-track">
+            <div class="bar-fill diesel" style="width:13%">NGN 31,542,500</div>
+          </div>
+        </div><div class="bar">
+          <div class="bar-label" title="Carlcare-Onitsha">Carlcare-Onitsha</div>
+          <div class="bar-track">
+            <div class="bar-fill diesel" style="width:10%">NGN 24,721,000</div>
+          </div>
+        </div><div class="bar">
+          <div class="bar-label" title="Carlcare-Benin">Carlcare-Benin</div>
+          <div class="bar-track">
+            <div class="bar-fill diesel" style="width:7%">NGN 16,690,500</div>
+          </div>
+        </div><div class="bar">
+          <div class="bar-label" title="MWH">MWH</div>
+          <div class="bar-track">
+            <div class="bar-fill diesel" style="width:6%">NGN 15,267,750</div>
+          </div>
+        </div><div class="bar">
+          <div class="bar-label" title="Carlcare-PHC">Carlcare-PHC</div>
+          <div class="bar-track">
+            <div class="bar-fill diesel" style="width:6%">NGN 14,426,150</div>
+          </div>
+        </div><div class="bar">
+          <div class="bar-label" title="Carlcare-Warri">Carlcare-Warri</div>
+          <div class="bar-track">
+            <div class="bar-fill diesel" style="width:5%">NGN 11,300,253</div>
+          </div>
+        </div>
+    </div>
+    
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>Shop</th><th class="num">Records</th><th class="num">Total</th><th class="num">Paid</th><th class="num">Unpaid</th><th class="num">Rejected</th></tr>
+        </thead>
+        <tbody>
+          
+      <tr>
+        <td class="shop-name">Carlcare-cv</td>
+        <td class="num">126</td>
+        <td class="num">NGN 243,314,250</td>
+        <td class="num paid">NGN 223,381,500</td>
+        <td class="num unpaid">NGN 12,945,000</td>
+        <td class="num rejected">NGN 6,987,750</td>
+      </tr>
+      <tr>
+        <td class="shop-name">Carlcare-Kano</td>
+        <td class="num">22</td>
+        <td class="num">NGN 37,492,814</td>
+        <td class="num paid">NGN 35,692,814</td>
+        <td class="num unpaid">NGN 1,800,000</td>
+        <td class="num rejected">NGN 0</td>
+      </tr>
+      <tr>
+        <td class="shop-name">Carlcare-Abuja</td>
+        <td class="num">31</td>
+        <td class="num">NGN 36,174,600</td>
+        <td class="num paid">NGN 33,936,400</td>
+        <td class="num unpaid">NGN 1,088,200</td>
+        <td class="num rejected">NGN 1,150,000</td>
+      </tr>
+      <tr>
+        <td class="shop-name">Carlcare-Ibadan</td>
+        <td class="num">28</td>
+        <td class="num">NGN 31,542,500</td>
+        <td class="num paid">NGN 30,382,500</td>
+        <td class="num unpaid">NGN 0</td>
+        <td class="num rejected">NGN 1,160,000</td>
+      </tr>
+      <tr>
+        <td class="shop-name">Carlcare-Onitsha</td>
+        <td class="num">55</td>
+        <td class="num">NGN 24,721,000</td>
+        <td class="num paid">NGN 20,509,000</td>
+        <td class="num unpaid">NGN 2,666,500</td>
+        <td class="num rejected">NGN 1,545,500</td>
+      </tr>
+      <tr>
+        <td class="shop-name">Carlcare-Benin</td>
+        <td class="num">30</td>
+        <td class="num">NGN 16,690,500</td>
+        <td class="num paid">NGN 13,739,200</td>
+        <td class="num unpaid">NGN 2,026,300</td>
+        <td class="num rejected">NGN 925,000</td>
+      </tr>
+      <tr>
+        <td class="shop-name">MWH</td>
+        <td class="num">11</td>
+        <td class="num">NGN 15,267,750</td>
+        <td class="num paid">NGN 13,557,750</td>
+        <td class="num unpaid">NGN 0</td>
+        <td class="num rejected">NGN 1,710,000</td>
+      </tr>
+      <tr>
+        <td class="shop-name">Carlcare-PHC</td>
+        <td class="num">21</td>
+        <td class="num">NGN 14,426,150</td>
+        <td class="num paid">NGN 12,234,750</td>
+        <td class="num unpaid">NGN 1,003,400</td>
+        <td class="num rejected">NGN 1,188,000</td>
+      </tr>
+      <tr>
+        <td class="shop-name">Carlcare-Warri</td>
+        <td class="num">29</td>
+        <td class="num">NGN 11,300,253</td>
+        <td class="num paid">NGN 9,918,553</td>
+        <td class="num unpaid">NGN 0</td>
+        <td class="num rejected">NGN 1,381,700</td>
+      </tr>
+          <tr class="total-row">
+            <td>TOTAL</td>
+            <td class="num">353</td>
+            <td class="num">NGN 430,929,817</td>
+            <td class="num paid">NGN 393,352,467</td>
+            <td class="num unpaid">NGN 21,529,400</td>
+            <td class="num rejected">NGN 16,047,950</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>🟣 Electric Bill — Detailed Breakdown</h2>
+    <div class="stats-row">
+      <div class="stat-card electric">
+        <div class="stat-label">Total Electric Bill</div>
+        <div class="stat-value">NGN 5,643,165</div>
+        <div class="stat-sub">62 records</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Paid</div>
+        <div class="stat-value" style="color:#0d9488">NGN 5,019,295</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Unpaid/Pending</div>
+        <div class="stat-value" style="color:#f59e0b">NGN 403,870</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Rejected</div>
+        <div class="stat-value" style="color:#ef4444">NGN 220,000</div>
+      </div>
+    </div>
+    
+    <h3>Top 10 Shops by Electric Bill Spend</h3>
+    <div class="chart-container">
+      <div class="bar">
+          <div class="bar-label" title="Carlcare-PHC">Carlcare-PHC</div>
+          <div class="bar-track">
+            <div class="bar-fill electric" style="width:100%">NGN 3,829,000</div>
+          </div>
+        </div><div class="bar">
+          <div class="bar-label" title="Carlcare-Benin">Carlcare-Benin</div>
+          <div class="bar-track">
+            <div class="bar-fill electric" style="width:20%">NGN 777,000</div>
+          </div>
+        </div><div class="bar">
+          <div class="bar-label" title="Carlcare-Warri">Carlcare-Warri</div>
+          <div class="bar-track">
+            <div class="bar-fill electric" style="width:18%">NGN 680,165</div>
+          </div>
+        </div><div class="bar">
+          <div class="bar-label" title="Carlcare-Onitsha">Carlcare-Onitsha</div>
+          <div class="bar-track">
+            <div class="bar-fill electric" style="width:6%">NGN 211,000</div>
+          </div>
+        </div><div class="bar">
+          <div class="bar-label" title="Carlcare-Kano">Carlcare-Kano</div>
+          <div class="bar-track">
+            <div class="bar-fill electric" style="width:3%">NGN 116,000</div>
+          </div>
+        </div><div class="bar">
+          <div class="bar-label" title="Carlcare-VI">Carlcare-VI</div>
+          <div class="bar-track">
+            <div class="bar-fill electric" style="width:0%">NGN 15,000</div>
+          </div>
+        </div><div class="bar">
+          <div class="bar-label" title="MWH">MWH</div>
+          <div class="bar-track">
+            <div class="bar-fill electric" style="width:0%">NGN 15,000</div>
+          </div>
+        </div>
+    </div>
+    
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>Shop</th><th class="num">Records</th><th class="num">Total</th><th class="num">Paid</th><th class="num">Unpaid</th><th class="num">Rejected</th></tr>
+        </thead>
+        <tbody>
+          
+      <tr>
+        <td class="shop-name">Carlcare-PHC</td>
+        <td class="num">15</td>
+        <td class="num">NGN 3,829,000</td>
+        <td class="num paid">NGN 3,829,000</td>
+        <td class="num unpaid">NGN 0</td>
+        <td class="num rejected">NGN 0</td>
+      </tr>
+      <tr>
+        <td class="shop-name">Carlcare-Benin</td>
+        <td class="num">16</td>
+        <td class="num">NGN 777,000</td>
+        <td class="num paid">NGN 477,000</td>
+        <td class="num unpaid">NGN 150,000</td>
+        <td class="num rejected">NGN 150,000</td>
+      </tr>
+      <tr>
+        <td class="shop-name">Carlcare-Warri</td>
+        <td class="num">20</td>
+        <td class="num">NGN 680,165</td>
+        <td class="num paid">NGN 416,295</td>
+        <td class="num unpaid">NGN 223,870</td>
+        <td class="num rejected">NGN 40,000</td>
+      </tr>
+      <tr>
+        <td class="shop-name">Carlcare-Onitsha</td>
+        <td class="num">8</td>
+        <td class="num">NGN 211,000</td>
+        <td class="num paid">NGN 151,000</td>
+        <td class="num unpaid">NGN 30,000</td>
+        <td class="num rejected">NGN 30,000</td>
+      </tr>
+      <tr>
+        <td class="shop-name">Carlcare-Kano</td>
+        <td class="num">1</td>
+        <td class="num">NGN 116,000</td>
+        <td class="num paid">NGN 116,000</td>
+        <td class="num unpaid">NGN 0</td>
+        <td class="num rejected">NGN 0</td>
+      </tr>
+      <tr>
+        <td class="shop-name">Carlcare-VI</td>
+        <td class="num">1</td>
+        <td class="num">NGN 15,000</td>
+        <td class="num paid">NGN 15,000</td>
+        <td class="num unpaid">NGN 0</td>
+        <td class="num rejected">NGN 0</td>
+      </tr>
+      <tr>
+        <td class="shop-name">MWH</td>
+        <td class="num">1</td>
+        <td class="num">NGN 15,000</td>
+        <td class="num paid">NGN 15,000</td>
+        <td class="num unpaid">NGN 0</td>
+        <td class="num rejected">NGN 0</td>
+      </tr>
+          <tr class="total-row">
+            <td>TOTAL</td>
+            <td class="num">62</td>
+            <td class="num">NGN 5,643,165</td>
+            <td class="num paid">NGN 5,019,295</td>
+            <td class="num unpaid">NGN 403,870</td>
+            <td class="num rejected">NGN 220,000</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>Generated: 2026-08-11 | Data: NG FN Report → Expense Import (9526 total records) | Powered by TClaw</p>
+  </div>
+</div>
+</body>
+</html>
