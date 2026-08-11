@@ -66,7 +66,11 @@ h2.page-title{font-size:16px;margin-bottom:16px;color:#fff}
 <body>
 <div class="header">
   <div><h1>🏦 Finance Expense Control Tower</h1><span class="badge badge-live" id="dataBadge">3,545 records (2025)</span></div>
+</div>
+<div class="app-layout">
+<div class="sidebar">
   <div class="nav" id="navBar">
+    <div class="nav-group-label">💸 Expense</div>
     <button class="active" data-page="page1">📊 Overview</button>
     <button data-page="page2">💰 Expense Analysis</button>
     <button data-page="page3">📈 Historical</button>
@@ -76,8 +80,12 @@ h2.page-title{font-size:16px;margin-bottom:16px;color:#fff}
     <button data-page="page7">🔍 Audit & Control</button>
     <button data-page="page8">⚡ Action Center</button>
     <button data-page="page9">👥 People & Regions</button>
+    <div class="nav-group-label">💰 Income</div>
+    <button data-page="page10" style="color:var(--muted);cursor:default">📥 Coming Soon</button>
   </div>
 </div>
+<div class="main-content">
+
 <div class="filter-bar" id="filterBar">
   <div class="filter-group"><label>Month</label><select id="fMonth" onchange="applyFilters()"><option value="all">All Months</option></select></div>
   <div class="filter-group"><label>Region</label><select id="fRegion" onchange="applyFilters()"><option value="all">All Regions</option></select></div>
