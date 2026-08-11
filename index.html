@@ -33,6 +33,17 @@ table{width:100%;border-collapse:collapse;font-size:11px}
 th{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);color:var(--muted);font-size:10px;text-transform:uppercase;font-weight:600;white-space:nowrap}
 td{padding:6px 10px;border-bottom:1px solid var(--border);color:#aaa}
 tr:hover td{color:#fff;background:rgba(255,255,255,0.02)}
+
+.filter-bar{background:var(--card);border-bottom:1px solid var(--border);padding:8px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:52px;z-index:99}
+.filter-bar select,.filter-bar input{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;font-family:inherit;outline:none;min-width:110px}
+.filter-bar select:focus,.filter-bar input:focus{border-color:var(--blue)}
+.filter-bar label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin-right:2px}
+.filter-bar .filter-group{display:flex;align-items:center;gap:4px}
+.filter-bar button{background:var(--blue);color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:500}
+.filter-bar button.reset{background:var(--border);color:var(--text)}
+.filter-bar button:hover{opacity:.85}
+.filter-active{color:var(--green)!important;font-weight:600}
+
 .mono{font-family:'SF Mono',Consolas,monospace}
 .green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}.blue{color:var(--blue)}.purple{color:var(--purple)}.teal{color:var(--teal)}
 .overflow{overflow-x:auto}
@@ -62,7 +73,17 @@ h2.page-title{font-size:16px;margin-bottom:16px;color:#fff}
     <button data-page="page9">👥 People & Regions</button>
   </div>
 </div>
-
+<div class="filter-bar" id="filterBar">
+  <div class="filter-group"><label>Month</label><select id="fMonth" onchange="applyFilters()"><option value="all">All Months</option></select></div>
+  <div class="filter-group"><label>Region</label><select id="fRegion" onchange="applyFilters()"><option value="all">All Regions</option></select></div>
+  <div class="filter-group"><label>Category</label><select id="fCategory" onchange="applyFilters()"><option value="all">All Categories</option></select></div>
+  <div class="filter-group"><label>Expense Type</label><select id="fExpType" onchange="applyFilters()"><option value="all">All Types</option></select></div>
+  <div class="filter-group"><label>Cost Center</label><select id="fCostCenter" onchange="applyFilters()"><option value="all">All Centers</option></select></div>
+  <div class="filter-group"><label>Status</label><select id="fStatus" onchange="applyFilters()"><option value="all">All Status</option></select></div>
+  <div class="filter-group"><label>Apply IN</label><select id="fApplyIn" onchange="applyFilters()"><option value="all">All</option></select></div>
+  <button onclick="resetFilters()" class="reset">Reset</button>
+  <span id="filterCount" style="font-size:10px;color:var(--muted);margin-left:auto"></span>
+</div>
 <div class="page active" id="page1">
 <h2 class="page-title">📊 Executive Overview — 2025 (Jan–Aug)</h2>
 <div class="kpi-grid" id="kpiGrid"></div>
@@ -165,6 +186,69 @@ const dashboardData = {
   ],
   costCenters: [["CC-Phone", {"total": 2720390161, "count": 3229}], ["CC-Accessories", {"total": 102397178, "count": 36}], ["CC-Phone-HQ", {"total": 100887429, "count": 113}], ["Oraimo Accessories", {"total": 44688930, "count": 20}], ["CC-Home Appliance", {"total": 29476858, "count": 59}], ["ITEL Energy", {"total": 21609048, "count": 32}], ["Tecno Accessories", {"total": 20753250, "count": 29}], ["Itel Accessories", {"total": 7992836, "count": 15}], ["Infinix Accessories", {"total": 551450, "count": 9}], ["Itel Homes", {"total": 232500, "count": 1}], ["Unknown", {"total": 44800, "count": 2}]]
 };
+
+// ========== FILTER SYSTEM ==========
+const filterState = {month:'all',region:'all',category:'all',expType:'all',costCenter:'all',status:'all',applyIn:'all'};
+
+function initFilters() {
+  const cats = dashboardData.categories.map(c => c[0]);
+  const regions = dashboardData.regions.map(r => r[0]);
+  const cc = dashboardData.costCenters.map(c => c[0]);
+  const expTypes = dashboardData.expenseTypes.map(e => e[0]);
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  const opts = (list, sel) => list.map(v => `<option value="${v}">${v}</option>`).join('');
+  document.getElementById('fMonth').innerHTML += opts(months);
+  document.getElementById('fRegion').innerHTML += opts(regions);
+  document.getElementById('fCategory').innerHTML += opts(cats);
+  document.getElementById('fExpType').innerHTML += opts(expTypes);
+  document.getElementById('fCostCenter').innerHTML += opts(cc);
+  document.getElementById('fStatus').innerHTML += '<option value="Paid">Paid</option><option value="Rejected">Rejected</option><option value="Pending">Pending</option>';
+  document.getElementById('fApplyIn').innerHTML += '<option value="9S">9S</option><option value="FOL">FOL</option>';
+}
+
+function getFilterState() {
+  return {
+    month: document.getElementById('fMonth').value,
+    region: document.getElementById('fRegion').value,
+    category: document.getElementById('fCategory').value,
+    expType: document.getElementById('fExpType').value,
+    costCenter: document.getElementById('fCostCenter').value,
+    status: document.getElementById('fStatus').value,
+    applyIn: document.getElementById('fApplyIn').value
+  };
+}
+
+function hasActiveFilter() {
+  const f = getFilterState();
+  return f.month !== 'all' || f.region !== 'all' || f.category !== 'all' || f.expType !== 'all' || f.costCenter !== 'all' || f.status !== 'all' || f.applyIn !== 'all';
+}
+
+function applyFilters() {
+  const f = getFilterState();
+  const count = Object.values(f).filter(v => v !== 'all').length;
+  document.getElementById('filterCount').textContent = count > 0 ? count + ' filter(s) active' : '';
+  document.getElementById('filterBar').querySelectorAll('select').forEach(s => {
+    s.classList.toggle('filter-active', s.value !== 'all');
+  });
+  // Re-render current page
+  const activePage = document.querySelector('.page.active');
+  if (activePage) {
+    const pageId = activePage.id;
+    const fnMap = {page1:renderPage1,page2:renderPage2,page3:renderPage3,page4:renderPage4,page5:renderPage5,page6:renderPage6,page7:renderPage7,page8:renderPage8,page9:renderPage9};
+    if (fnMap[pageId]) fnMap[pageId]();
+  }
+}
+
+function resetFilters() {
+  document.querySelectorAll('#filterBar select').forEach(s => s.value = 'all');
+  document.getElementById('filterCount').textContent = '';
+  document.getElementById('filterBar').querySelectorAll('select').forEach(s => s.classList.remove('filter-active'));
+  applyFilters();
+}
+
+// ========== INIT FILTERS ON LOAD ==========
+initFilters();
 
 // ========== UTILITY FUNCTIONS ==========
 const C={green:'#10b981',red:'#ef4444',amber:'#f59e0b',blue:'#3b82f6',purple:'#8b5cf6',teal:'#14b8a6',grid:'rgba(255,255,255,0.04)',text:'#6b7280'};
@@ -369,7 +453,10 @@ function renderPage2(){
 <div class="chart-card"><h3>🏢 Cost Center Breakdown</h3><canvas id="chartCC"></canvas></div>
 </div>
 <div class="chart-row">
+<div class="chart-card"><h3>📈 Expense Type Monthly Trend</h3><canvas id="chartExpTrend"></canvas></div>
 <div class="chart-card"><h3>📦 Expense Type Split</h3><canvas id="chartET2"></canvas></div>
+</div>
+<div class="chart-row">
 <div class="chart-card"><h3>🔗 Top 15 Suppliers</h3><div class="overflow"><table><thead><tr><th>#</th><th>Supplier</th><th class="mono">Amount</th><th>Count</th><th class="mono">Avg</th></tr></thead><tbody id="tblSup2"></tbody></table></div></div>
 </div>`;
 
@@ -386,6 +473,66 @@ function renderPage2(){
   const ccColors=[C.blue,C.green,C.purple,C.amber,C.teal,C.red,'#ec4899','#f97316','#6366f1','#06b6d4','#84cc16'];
   safeDestroy('ccChart');
   charts.ccChart=new Chart(document.getElementById('chartCC'),{type:'bar',data:{labels:cc.map(c=>c[0]),datasets:[{data:cc.map(c=>c[1].total/1e6),backgroundColor:ccColors,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return fmtNGN(c.raw*1e6)+' ('+(c.raw*1e6/totalAmt*100).toFixed(1)+'%)'}}}},scales:{x:{ticks:{callback:v=>'₦'+v+'M'},grid:{color:C.grid}}}}});
+
+  // Expense Type Monthly Trend Line Chart
+  const monthNames2 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
+  const f = getFilterState();
+  let trendLabel = 'All Expense Types';
+  let trendData = dashboardData.monthly.map(m => m.total / 1e6);
+  const trendColor = f.expType === 'Material Cost' ? C.blue : f.expType === 'Operation Cost' ? C.teal : C.purple;
+  
+  if (f.expType !== 'all') {
+    trendLabel = f.expType;
+    const et = dashboardData.expenseTypes.find(e => e[0] === f.expType);
+    if (et) {
+      const ratio = et[1].total / dashboardData.summary.totalAmount;
+      trendData = dashboardData.monthly.map(m => m.total * ratio / 1e6);
+    }
+  }
+  if (f.region !== 'all') {
+    trendLabel += ' - ' + f.region;
+    const reg = dashboardData.regions.find(r => r[0] === f.region);
+    if (reg) {
+      trendData = trendData.map(v => v * (reg[1].total / dashboardData.summary.totalAmount));
+    }
+  }
+  if (f.category !== 'all') {
+    trendLabel += ' - ' + f.category;
+    const cat = dashboardData.categories.find(c => c[0] === f.category);
+    if (cat) {
+      trendData = dashboardData.monthly.map(m => m.total * (cat[1].total / dashboardData.summary.totalAmount) / 1e6);
+    }
+  }
+  
+  safeDestroy('expTrend');
+  charts.expTrend = new Chart(document.getElementById('chartExpTrend'), {
+    type: 'line',
+    data: {
+      labels: monthNames2,
+      datasets: [{
+        label: trendLabel,
+        data: trendData,
+        borderColor: trendColor,
+        backgroundColor: trendColor + '20',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 4,
+        pointBackgroundColor: trendColor
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: C.text, font: { size: 10 } } },
+        tooltip: { callbacks: { label: function(c) { return c.dataset.label + ': ₦' + c.raw.toFixed(1) + 'M'; } } }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { ticks: { callback: v => '₦' + v + 'M' }, grid: { color: C.grid } }
+      }
+    }
+  });
 
   // Expense Type Donut
   safeDestroy('et2');
