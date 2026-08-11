@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Finance Expense Control Tower</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0c0e18;--card:#131620;--border:#1e2233;--text:#e2e4e9;--muted:#6b7280;--green:#10b981;--red:#ef4444;--amber:#f59e0b;--blue:#3b82f6;--purple:#8b5cf6;--teal:#14b8a6}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;min-height:100vh;font-size:13px}
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100}
+.header h1{font-size:17px;font-weight:700;white-space:nowrap;color:#fff}
+.header .badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:10px;font-weight:600}
+.badge-live{background:rgba(16,185,129,.15);color:var(--green)}
+.nav{display:flex;gap:2px;background:var(--bg);border-radius:8px;padding:3px;overflow-x:auto;flex-wrap:wrap}
+.nav button{border:none;background:transparent;color:var(--muted);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:500;white-space:nowrap;font-family:inherit}
+.nav button.active{background:var(--border);color:#fff}
+.nav button:hover{color:#fff}
+.page{display:none;padding:16px 20px}
+.page.active{display:block}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.kpi:hover{border-color:var(--blue)}
+.kpi .kpi-val{font-size:20px;font-weight:700;font-family:'SF Mono',Consolas,monospace}
+.kpi .kpi-lbl{font-size:10px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.3px}
+.kpi .kpi-sub{font-size:10px;margin-top:1px}
+.chart-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:14px;margin-bottom:14px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+.chart-card h3{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;font-weight:600}
+canvas{max-height:300px}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);color:var(--muted);font-size:10px;text-transform:uppercase;font-weight:600;white-space:nowrap}
+td{padding:6px 10px;border-bottom:1px solid var(--border);color:#aaa}
+.mono{font-family:'SF Mono',Consolas,monospace}
+.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}.blue{color:var(--blue)}.purple{color:var(--purple)}
+.overflow{overflow-x:auto}
+.loading{text-align:center;padding:60px;color:var(--muted)}
+.spinner{border:3px solid var(--border);border-top:3px solid var(--blue);border-radius:50%;width:36px;height:36px;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-msg{text-align:center;padding:40px;color:var(--red)}
+h2.page-title{font-size:16px;margin-bottom:16px;color:#fff}
+</style>
+</head>
+<body>
+<div class="header">
+  <div><h1>🏦 Finance Expense Control Tower</h1><span class="badge badge-live" id="dataBadge">Loading...</span></div>
+  <div class="nav" id="navBar">
+    <button class="active" data-page="page1">📊 Overview</button>
+    <button data-page="page2">💰 Expense Analysis</button>
+    <button data-page="page3">📈 Historical</button>
+    <button data-page="page4">⏱️ TAT Efficiency</button>
+    <button data-page="page5">💳 Payment & Aging</button>
+    <button data-page="page6">🚫 Rejection</button>
+    <button data-page="page7">🔍 Audit & Control</button>
+    <button data-page="page8">⚡ Action Center</button>
+    <button data-page="page9">👥 People & Regions</button>
+  </div>
+</div>
+
+<div class="page active" id="page1"><div class="loading"><div class="spinner"></div>Loading 5,715 records...</div></div>
+<div class="page" id="page2"><div class="loading">Loading...</div></div>
+<div class="page" id="page3"><div class="loading">Loading...</div></div>
+<div class="page" id="page4"><div class="loading">Loading...</div></div>
+<div class="page" id="page5"><div class="loading">Loading...</div></div>
+<div class="page" id="page6"><div class="loading">Loading...</div></div>
+<div class="page" id="page7"><div class="loading">Loading...</div></div>
+<div class="page" id="page8"><div class="loading">Loading...</div></div>
+<div class="page" id="page9"><div class="loading">Loading...</div></div>
+
+<script>
+const C={green:'#10b981',red:'#ef4444',amber:'#f59e0b',blue:'#3b82f6',purple:'#8b5cf6',teal:'#14b8a6',grid:'rgba(255,255,255,0.04)',text:'#6b7280'};
+let rawData=[],charts={};
+
+function fmt(n){return n.toLocaleString('en-NG')}
+function fmtNGN(n){return '₦'+Math.round(n).toLocaleString()}
+function fmtNGNM(n){return '₦'+(n/1e6).toFixed(1)+'M'}
+function safeDestroy(id){if(charts[id]){charts[id].destroy();delete charts[id]}}
+function avg(arr){return arr.length>0?arr.reduce((a,b)=>a+b,0)/arr.length:0}
+
+// Navigation
+document.querySelectorAll('.nav button').forEach(btn=>{
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById(this.dataset.page).classList.add('active');
+    if(this.dataset.page==='page1')renderPage1();
+    if(this.dataset.page==='page2')renderPage2();
+    if(this.dataset.page==='page3')renderPage3();
+    if(this.dataset.page==='page4')renderPage4();
+    if(this.dataset.page==='page5')renderPage5();
+    if(this.dataset.page==='page6')renderPage6();
+    if(this.dataset.page==='page7')renderPage7();
+    if(this.dataset.page==='page8')renderPage8();
+    if(this.dataset.page==='page9')renderPage9();
+  });
+});
+
+fetch('data.json')
+  .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+  .then(data=>{
+    rawData=data;
+    document.getElementById('dataBadge').textContent=data.length.toLocaleString()+' records (2025)';
+    if(typeof Chart!=='undefined'){Chart.defaults.color=C.text;Chart.defaults.borderColor=C.grid;Chart.defaults.font.size=10}
+    renderPage1();
+  })
+  .catch(e=>{document.getElementById('page1').innerHTML='<div class="error-msg">⚠️ Failed to load data: '+e.message+'</div>'});
+
+function renderPage1(){
+  const d=rawData;
+  const total=d.length,totalAmt=d.reduce((s,r)=>s+r.amount,0);
+  const paid=d.filter(r=>r.paymentStatus==='Payment Completed'||r.paymentStatus==='Clear loan');
+  const paidAmt=paid.reduce((s,r)=>s+r.amount,0);
+  const pending=d.filter(r=>!r.paymentStatus||r.paymentStatus===''||r.paymentStatus==='Payment applied-Awaiting Paid');
+  const pendingAmt=pending.reduce((s,r)=>s+r.amount,0);
+  const rej=d.filter(r=>r.approval==='Fail Verification');
+  const rejAmt=rej.reduce((s,r)=>s+r.amount,0);
+  const payRate=total>0?paid.length/total*100:0,rejRate=total>0?rej.length/total*100:0;
+  const dupInv=d.filter(r=>r.invNoDuplicate).length,dupLpo=d.filter(r=>r.lpoDuplicate&&r.lpoDuplicate.includes('repetitive')).length;
+  const missingPayDate=d.filter(r=>r.paymentStatus==='Payment Completed'&&!r.paymentDate).length;
+  const missingPayEv=d.filter(r=>r.paymentStatus==='Payment Completed'&&!r.paymentEvidence).length;
+  const pendingAppr=d.filter(r=>!r.approval||r.approval==='').length;
+  const invApplyTAT=d.filter(r=>r.submittedDate&&r.invoiceDate).map(r=>(new Date(r.submittedDate)-new Date(r.invoiceDate))/86400000);
+  const mailApplyTAT=d.filter(r=>r.mailDate&&r.submittedDate).map(r=>(new Date(r.mailDate)-new Date(r.submittedDate))/86400000);
+  const payTAT=d.filter(r=>r.paymentDate&&r.mailDate).map(r=>(new Date(r.paymentDate)-new Date(r.mailDate))/86400000);
+  const overallTAT=d.filter(r=>r.paymentDate&&r.invoiceDate).map(r=>(new Date(r.paymentDate)-new Date(r.invoiceDate))/86400000);
+
+  document.getElementById('page1').innerHTML=`
+<h2 class="page-title">📊 Executive Finance Overview — 2025</h2>
+<div class="kpi-grid">
+  <div class="kpi"><div class="kpi-val blue">${fmtNGN(totalAmt)}</div><div class="kpi-lbl">Total Expense</div></div>
+  <div class="kpi"><div class="kpi-val">${fmt(total)}</div><div class="kpi-lbl">Total Transactions</div></div>
+  <div class="kpi"><div class="kpi-val green">${fmtNGN(paidAmt)}</div><div class="kpi-lbl">Paid Amount</div><div class="kpi-sub green">${payRate.toFixed(1)}% completion</div></div>
+  <div class="kpi"><div class="kpi-val amber">${fmtNGN(pendingAmt)}</div><div class="kpi-lbl">Pending Amount</div></div>
+  <div class="kpi"><div class="kpi-val red">${fmtNGN(rejAmt)}</div><div class="kpi-lbl">Rejected Amount</div><div class="kpi-sub red">${rejRate.toFixed(1)}% rate</div></div>
+  <div class="kpi"><div class="kpi-val">${avg(overallTAT).toFixed(1)}d</div><div class="kpi-lbl">Avg Overall TAT</div></div>
+  <div class="kpi"><div class="kpi-val">${avg(invApplyTAT).toFixed(1)}d</div><div class="kpi-lbl">Avg Invoice→Submit TAT</div></div>
+  <div class="kpi"><div class="kpi-val">${avg(mailApplyTAT).toFixed(1)}d</div><div class="kpi-lbl">Avg Submit→Mail TAT</div></div>
+  <div class="kpi"><div class="kpi-val">${avg(payTAT).toFixed(1)}d</div><div class="kpi-lbl">Avg Mail→Payment TAT</div></div>
+  <div class="kpi" style="border-left:3px solid var(--red)"><div class="kpi-val red">${dupInv}</div><div class="kpi-lbl">Duplicate Invoices</div></div>
+  <div class="kpi" style="border-left:3px solid var(--red)"><div class="kpi-val red">${dupLpo}</div><div class="kpi-lbl">Duplicate LPOs</div></div>
+  <div class="kpi" style="border-left:3px solid var(--red)"><div class="kpi-val red">${missingPayDate}</div><div class="kpi-lbl">Paid w/ Missing Pay Date</div></div>
+  <div class="kpi" style="border-left:3px solid var(--red)"><div class="kpi-val red">${missingPayEv}</div><div class="kpi-lbl">Paid w/ Missing Evidence</div></div>
+  <div class="kpi" style="border-left:3px solid var(--amber)"><div class="kpi-val amber">${pendingAppr}</div><div class="kpi-lbl">Pending Approval</div></div>
+  <div class="kpi" style="border-left:3px solid var(--red)"><div class="kpi-val red">${rej.length}</div><div class="kpi-lbl">Rejected / Re-apply</div></div>
+</div>
+<div class="chart-row">
+  <div class="chart-card"><h3>📈 Monthly Spend Trend (2025)</h3><canvas id="chartMonthly"></canvas></div>
+  <div class="chart-card"><h3>💰 Expense by Category (Top 10)</h3><canvas id="chartCat"></canvas></div>
+</div>
+<div class="chart-row">
+  <div class="chart-card"><h3>🌍 Expense by Region</h3><canvas id="chartRegion"></canvas></div>
+  <div class="chart-card"><h3>💳 Payment Status</h3><canvas id="chartPay"></canvas></div>
+</div>
+<div class="chart-row">
+  <div class="chart-card"><h3>🚫 Rejection Trend</h3><canvas id="chartRej"></canvas></div>
+  <div class="chart-card"><h3>⏱️ TAT Trend</h3><canvas id="chartTAT"></canvas></div>
+</div>`;
+
+  if(typeof Chart==='undefined')return;
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthlyAmt=months.map(m=>{const md=d.filter(r=>r.month&&r.month.trim()===m);return md.reduce((s,r)=>s+r.amount,0)});
+  const monthlyCount=months.map(m=>d.filter(r=>r.month&&r.month.trim()===m).length);
+
+  // Monthly trend with MoM
+  safeDestroy('mTrend');
+  const momRates=monthlyAmt.map((v,i)=>i>0&&monthlyAmt[i-1]>0?((v-monthlyAmt[i-1])/monthlyAmt[i-1]*100):0);
+  charts.mTrend=new Chart(document.getElementById('chartMonthly'),{type:'bar',data:{labels:months,datasets:[{label:'Amount (₦M)',data:monthlyAmt.map(v=>v/1e6),backgroundColor:monthlyAmt.map(v=>v>5e8?C.red:v>3e8?C.amber:C.blue),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){const i=c.dataIndex;return '₦'+fmt(Math.round(monthlyAmt[i]))+' | '+monthlyCount[i]+' txns | MoM: '+(momRates[i]>=0?'+':'')+momRates[i].toFixed(1)+'%'}}}},scales:{y:{ticks:{callback:v=>'₦'+v+'M'}}}}});
+
+  // By category
+  const cats={};d.forEach(r=>{cats[r.category||'?']=(cats[r.category||'?']||0)+r.amount});
+  const topCats=Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  safeDestroy('catChart');
+  charts.catChart=new Chart(document.getElementById('chartCat'),{type:'bar',data:{labels:topCats.map(c=>c[0]),datasets:[{data:topCats.map(c=>c[1]/1e6),backgroundColor:topCats.map((_,i)=>[C.blue,C.green,C.purple,C.amber,C.teal,C.red][i%6]),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return fmtNGNM(c.raw*1e6)+' ('+(c.raw*1e6/totalAmt*100).toFixed(1)+'% of total)'}}}},scales:{x:{ticks:{callback:v=>'₦'+v+'M'}}}}});
+
+  // By region
+  const regions={};d.forEach(r=>{regions[r.region||'?']=(regions[r.region||'?']||0)+r.amount});
+  const topRegions=Object.entries(regions).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  safeDestroy('regChart');
+  charts.regChart=new Chart(document.getElementById('chartRegion'),{type:'doughnut',data:{labels:topRegions.map(r=>r[0]),datasets:[{data:topRegions.map(r=>r[1]),backgroundColor:topRegions.map((_,i)=>[C.blue,C.green,C.purple,C.amber,C.teal,C.red,C.pink,C.blue][i%8])}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},color:C.text}},tooltip:{callbacks:{label:function(c){const v=c.raw;return fmtNGN(v)+' ('+(v/totalAmt*100).toFixed(1)+'%)'}}}}}});
+
+  // Payment status
+  const statusAmt={};d.forEach(r=>{const s=r.paymentStatus||'Unknown';statusAmt[s]=(statusAmt[s]||0)+r.amount});
+  safeDestroy('payChart');
+  charts.payChart=new Chart(document.getElementById('chartPay'),{type:'doughnut',data:{labels:Object.keys(statusAmt),datasets:[{data:Object.values(statusAmt),backgroundColor:[C.green,C.amber,C.red,C.purple,C.teal]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},color:C.text}},tooltip:{callbacks:{label:function(c){return fmtNGN(c.raw)+' ('+(c.raw/totalAmt*100).toFixed(1)+'%)'}}}}}});
+
+  // Rejection trend
+  const rejRates=months.map(m=>{const md=d.filter(r=>r.month&&r.month.trim()===m);return md.length>0?md.filter(r=>r.approval==='Fail Verification').length/md.length*100:0});
+  safeDestroy('rejTrend');
+  charts.rejTrend=new Chart(document.getElementById('chartRej'),{type:'line',data:{labels:months,datasets:[{label:'Rejection Rate %',data:rejRates,borderColor:C.red,backgroundColor:'rgba(239,68,68,0.1)',fill:true,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:function(c){return c.raw.toFixed(1)+'% rejection rate'}}}},scales:{y:{ticks:{callback:v=>v+'%'}}}}});
+
+  // TAT trend
+  const tatTrends=months.map(m=>{const md=d.filter(r=>r.month&&r.month.trim()===m&&r.paymentDate&&r.invoiceDate);const tats=md.map(r=>(new Date(r.paymentDate)-new Date(r.invoiceDate))/86400000);return tats.length>0?tats.reduce((a,b)=>a+b,0)/tats.length:0});
+  safeDestroy('tatTrend');
+  charts.tatTrend=new Chart(document.getElementById('chartTAT'),{type:'line',data:{labels:months,datasets:[{label:'Avg Overall TAT (days)',data:tatTrends,borderColor:C.blue,backgroundColor:'rgba(59,130,246,0.1)',fill:true,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{tooltip:{callbacks:{label:function(c){return c.raw.toFixed(1)+' days'}}}},scales:{y:{ticks:{callback:v=>v+'d'}}}}});
+}
+
+function stubPage(id,label){document.getElementById(id).innerHTML='<h2 class="page-title">'+label+'</h2><p style="color:var(--muted)">Coming in next stage...</p>'}
+function renderPage2(){stubPage('page2','💰 Expense Analysis')}
+function renderPage3(){stubPage('page3','📈 Historical Analysis')}
+function renderPage4(){stubPage('page4','⏱️ TAT Efficiency')}
+function renderPage5(){stubPage('page5','💳 Payment & Aging')}
+function renderPage6(){stubPage('page6','🚫 Rejection Analysis')}
+function renderPage7(){stubPage('page7','🔍 Audit & Control')}
+function renderPage8(){stubPage('page8','⚡ Action Center')}
+function renderPage9(){stubPage('page9','👥 People & Regions')}
+</script>
+</body>
+</html>
