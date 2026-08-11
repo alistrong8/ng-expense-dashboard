@@ -61,6 +61,13 @@ h2.page-title{font-size:16px;margin-bottom:16px;color:#fff}
 .table-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
 .table-card h3{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;font-weight:600}
 .bar-mini{display:inline-block;height:6px;border-radius:3px;vertical-align:middle;margin-right:6px}
+/* Collapsible Sidebar Groups */
+.nav-group{margin-bottom:4px}
+.nav-group-header{cursor:pointer;padding:8px 14px;font-size:11px;font-weight:600;color:var(--text);border-radius:6px;user-select:none;display:flex;align-items:center;gap:6px;margin:0 8px 2px;transition:background .15s}
+.nav-group-header:hover{background:rgba(255,255,255,0.04)}
+.nav-group-toggle{font-size:9px;transition:transform 0.2s;display:inline-block;width:12px;text-align:center;flex-shrink:0}
+.nav-group-toggle.collapsed{transform:rotate(-90deg)}
+.nav-group-items.collapsed{display:none}
 </style>
 </head>
 <body>
@@ -70,18 +77,32 @@ h2.page-title{font-size:16px;margin-bottom:16px;color:#fff}
 <div class="app-layout">
 <div class="sidebar">
   <div class="nav" id="navBar">
-    <div class="nav-group-label">💸 Expense</div>
-    <button class="active" data-page="page1">📊 Overview</button>
-    <button data-page="page2">💰 Expense Analysis</button>
-    <button data-page="page3">📈 Historical</button>
-    <button data-page="page4">⏱️ TAT Efficiency</button>
-    <button data-page="page5">💳 Payment & Aging</button>
-    <button data-page="page6">🚫 Rejection</button>
-    <button data-page="page7">🔍 Audit & Control</button>
-    <button data-page="page8">⚡ Action Center</button>
-    <button data-page="page9">👥 People & Regions</button>
-    <div class="nav-group-label">💰 Income</div>
-    <button data-page="page10" style="color:var(--muted);cursor:default">📥 Coming Soon</button>
+    <div class="nav-group">
+      <div class="nav-group-header" onclick="toggleGroup('expense')">
+        <span class="nav-group-toggle" id="toggle-expense">▼</span>
+        💸 Expense
+      </div>
+      <div class="nav-group-items" id="group-expense">
+        <button class="active" data-page="page1">📊 Overview</button>
+        <button data-page="page2">💰 Expense Analysis</button>
+        <button data-page="page3">📈 Historical</button>
+        <button data-page="page4">⏱️ TAT Efficiency</button>
+        <button data-page="page5">💳 Payment & Aging</button>
+        <button data-page="page6">🚫 Rejection</button>
+        <button data-page="page7">🔍 Audit & Control</button>
+        <button data-page="page8">⚡ Action Center</button>
+        <button data-page="page9">👥 People & Regions</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-header" onclick="toggleGroup('income')">
+        <span class="nav-group-toggle collapsed" id="toggle-income">▶</span>
+        💰 Income
+      </div>
+      <div class="nav-group-items collapsed" id="group-income">
+        <button data-page="page10">📥 Coming Soon</button>
+      </div>
+    </div>
   </div>
 </div>
 <div class="main-content">
@@ -149,6 +170,11 @@ h2.page-title{font-size:16px;margin-bottom:16px;color:#fff}
 </div>
 </div>
 
+<div class="page" id="page10">
+<h2 class="page-title">📥 Income — Coming Soon</h2>
+<p style="color:var(--muted);padding:60px;text-align:center">Income analysis features are under development. Stay tuned.</p>
+</div>
+
 <script>
 // ========== INLINE DASHBOARD DATA ==========
 const dashboardData = {"summary": {"totalRecords": 3823, "totalAmount": 2860386082, "paidCount": 3055, "paidAmount": 2382049100, "rejectedCount": 354, "rejectedAmount": 324544239, "pendingCount": 307, "pendingAmount": 108062044, "paidRate": "79.9", "rejectedRate": "9.3", "pendingRate": "8.0", "avgTAT": {"submitToMail": 0, "mailToPayment": 0, "overall": 0}, "dupInvCount": 1642, "dupLpoCount": 2362, "totalSuppliers": 119, "totalCenters": 18, "missingEvidence": 0, "missingPayDate": 638, "pendingApproval": 0}, "monthly": [{"month": "2026-01", "total": 299379442, "count": 469, "paid": 257082563, "rejected": 33025932, "pending": 9270946}, {"month": "2026-02", "total": 285599211, "count": 419, "paid": 253104262, "rejected": 28239506, "pending": 4255443}, {"month": "2026-03", "total": 380327332, "count": 480, "paid": 364914569, "rejected": 12592881, "pending": 2819882}, {"month": "2026-04", "total": 393613951, "count": 516, "paid": 353042276, "rejected": 36513118, "pending": 4058557}, {"month": "2026-05", "total": 328484132, "count": 512, "paid": 288325440, "rejected": 33295917, "pending": 6862775}, {"month": "2026-06", "total": 471204164, "count": 630, "paid": 337853904, "rejected": 123577289, "pending": 9772970}, {"month": "2026-07", "total": 609960724, "count": 591, "paid": 521871054, "rejected": 45237903, "pending": 42851766}, {"month": "2026-08", "total": 91817122, "count": 206, "paid": 5855030, "rejected": 12061691, "pending": 73900400}], "categories": [["Phone Local Purchase", {"total": 1090186706.6149998, "count": 1594}], ["Logistic fee", {"total": 542049305.06, "count": 270}], ["Material Local Purchase", {"total": 352606632.54, "count": 180}], ["AO REFUND", {"total": 174797110.02999997, "count": 219}], ["Diesel", {"total": 161578862.5, "count": 131}], ["Rent", {"total": 61455987.3, "count": 6}], ["Equipment maintenance...", {"total": 60556345.5, "count": 240}], ["Shop Decoration", {"total": 47188897.224, "count": 9}], ["HA REFUND", {"total": 41222100, "count": 27}], ["Transport Allowance", {"total": 28278800, "count": 74}], ["feeding allowance", {"total": 28083700, "count": 71}], ["Security Fee", {"total": 27267595.98, "count": 19}], ["Airtime", {"total": 26765875, "count": 42}], ["Service fee", {"total": 22521207.75, "count": 63}], ["Building maintanance", {"total": 22349354, "count": 8}], ["Stationaries", {"total": 17319935, "count": 95}], ["Reimbursement for termination", {"total": 15615089, "count": 2}], ["Tool material", {"total": 11046975.5, "count": 26}], ["Position Allowance", {"total": 10630000, "count": 49}], ["Tax", {"total": 9290382.5, "count": 16}], ["Business trip", {"total": 9282834.98, "count": 23}], ["Phone-Trade", {"total": 9076476, "count": 115}], ["Equipment maintenance Material", {"total": 8362478.75, "count": 13}], ["Fuel & Car Maintanance", {"total": 6093605, "count": 102}], ["Transportation", {"total": 5914325.800000001, "count": 92}], ["Drinking Water", {"total": 5465325, "count": 71}], ["renovation", {"total": 5248853.45, "count": 3}], ["Team Bonding", {"total": 4942858, "count": 10}], ["STAFF WELFARE", {"total": 4652261, "count": 4}], ["PCBA ALLOWANCE", {"total": 4325397.38, "count": 8}], ["Laptop", {"total": 3744790, "count": 12}], ["Cleaning Material", {"total": 3347928, "count": 31}], ["Feeding", {"total": 3173400, "count": 14}], ["Promotion Material", {"total": 2973370, "count": 8}], ["Waste disposal", {"total": 2936000, "count": 16}], ["OLD-TO-OLD", {"total": 2807700, "count": 7}], ["Fixed Asset", {"total": 2744712, "count": 6}], ["Gen Miantanance", {"total": 2507200, "count": 21}], ["Gift", {"total": 2430375, "count": 4}], ["Electric bill", {"total": 2342000, "count": 15}], ["Phone Rework", {"total": 2270000, "count": 2}], ["Allowance", {"total": 2253000, "count": 8}], ["Faulty label stickers", {"total": 1980000, "count": 2}], ["CE Outbound Airtime", {"total": 1671625.0, "count": 7}], ["Medic", {"total": 1630900, "count": 16}], ["REFUND", {"total": 1500000, "count": 1}], ["Screen sales incentive", {"total": 1484086, "count": 4}], ["Hotel", {"total": 1084000, "count": 11}], ["Business Entertainment", {"total": 778920, "count": 1}], ["Toile Water", {"total": 535000, "count": 13}], ["Toiletries", {"total": 403700, "count": 10}], ["Chair Purchase", {"total": 360000, "count": 2}], ["loan clear", {"total": 349000, "count": 3}], ["Labour", {"total": 272000, "count": 7}], ["tools", {"total": 250600, "count": 7}], ["Old pendings clearing", {"total": 150000, "count": 1}], ["sim card", {"total": 123000, "count": 8}], ["AC Maintenance", {"total": 52500, "count": 1}], ["Packing nylon", {"total": 25000, "count": 1}], ["Office refreshment", {"total": 20000, "count": 1}], ["Airtime ", {"total": 10000, "count": 1}]], "expenseTypes": [["Material Cost", {"total": 1664783621.6850002, "count": 2112}], ["Operation Cost", {"total": 1192910416.174, "count": 1701}], ["Country", {"total": 2692045, "count": 10}]], "regions": [["Lagos", {"total": 2105693083.0049999, "count": 2498}], ["South East", {"total": 319245079.1499999, "count": 853}], ["North", {"total": 318991243.974, "count": 299}], ["South West", {"total": 91059792.73, "count": 155}], ["benin country", {"total": 22013334, "count": 10}], ["Benin Country", {"total": 3383550, "count": 8}]], "costCenters": [["CC-Phone", {"total": 1958619324.2690005, "count": 2968}], ["CC-Accessories", {"total": 240352183.67000002, "count": 110}], ["Itel Homes", {"total": 175217111, "count": 28}], ["Oraimo Accessories", {"total": 134551125.4, "count": 66}], ["ITEL Energy", {"total": 125143664.53999999, "count": 132}], ["Itel Accessories", {"total": 62992985.38, "count": 61}], ["CC-Home Appliance", {"total": 51691153.56, "count": 159}], ["West Africa - Region 1-Nigeria-New Business", {"total": 34215973.3, "count": 23}], ["Tecno Accessories", {"total": 33272523.54, "count": 65}], ["CC-Phone-HQ", {"total": 21442547.45, "count": 51}], ["Infinix Accessories", {"total": 12319753.25, "count": 56}], ["CC-Synix", {"total": 4867737.5, "count": 2}], ["WA-1 Region-Nigeria-CC-Electrical Applia", {"total": 2680000, "count": 24}], ["After-sales - Mobile Phone", {"total": 2400000, "count": 24}], ["CC-Niger Phone", {"total": 280000, "count": 24}], ["WA-1-BJ-CC-Phone", {"total": 270000, "count": 23}], ["WA-1 Region-Nigeria-CC-Netbook", {"total": 60000, "count": 6}], ["CC-BJ PHONE", {"total": 10000, "count": 1}]], "topSuppliers": [["T-DELIGHT PHONES AND COMMUNICATION", {"total": 303319331.015, "count": 396}], ["JOBIZ GLOBAL INVESTMENT COMPANY LIMITED", {"total": 132244564.5, "count": 16}], ["spectrum innovation tech ltd", {"total": 131748689.5, "count": 48}], ["BDR COMMUNICATION", {"total": 128648848.85, "count": 82}], ["REIMBURSEMENT", {"total": 117105972.65, "count": 889}], ["Kpride Logistics", {"total": 110346233.91999999, "count": 28}], ["LILY HILLS OIL & GAS BIG LTD", {"total": 97620000, "count": 42}], ["Olasmart logistics", {"total": 82275344.41, "count": 28}], ["DCC Express Limited", {"total": 77701814.03, "count": 26}], ["ORAIMO ACCESSORY REFUND", {"total": 73797268.4, "count": 48}], ["Pro logistic ", {"total": 64973072.34, "count": 24}], ["mickky pay ventures", {"total": 64421352, "count": 12}], ["ITEL ACCESSORY REFUND", {"total": 62125181.38, "count": 60}], ["mirahub", {"total": 61333769.66000001, "count": 136}], ["Unknown", {"total": 60609400, "count": 58}]], "rejectionReasons": [["No reason given", {"count": 25, "amount": 5452878}], ["Kindly separate the VAT amount from the phone purchase amount on the invoice.", {"count": 14, "amount": 3129198}], ["Double application", {"count": 12, "amount": 11102878.120000001}], ["Work on the VAT computation", {"count": 10, "amount": 6630499.6}], ["Kindly address to Mirahub Limited", {"count": 9, "amount": 6445388.5}], ["Kindly work on the VAT computation", {"count": 7, "amount": 2679647}], ["Kindly work on the VAT computation on the invoice.", {"count": 7, "amount": 1919445}], ["Duplicate application", {"count": 7, "amount": 5955693}], ["The LPO is not showing on our FOL system.. Kindly reach out to the I.T or mainwa", {"count": 6, "amount": 4255209.5}], ["Ensure that the amount on the mail matches the amount on the invoice.", {"count": 6, "amount": 6974162.5}]], "rejectionByRegion": [["South East", {"count": 151, "amount": 58021547.02}], ["Lagos", {"count": 143, "amount": 231202547.41000003}], ["North", {"count": 37, "amount": 28231974.5}], ["South West", {"count": 23, "amount": 7088171}]], "people": [["MARYANN NNENNA IRO", {"count": 255, "total": 532532189.55999994, "rejected": 0}], ["Abdulsamad Ohiani Yakubu", {"count": 659, "total": 423916332.4149998, "rejected": 22}], ["SEYI DAMILOLA ADEBAYO", {"count": 534, "total": 276138042.0, "rejected": 34}], ["Akintoye Emmanuel Timilehin", {"count": 327, "total": 212399505.02999997, "rejected": 23}], ["IMMACULATE CHIDINMA NWANKWO", {"count": 165, "total": 202099924.35, "rejected": 8}], ["NDUBUISI HILLY HARRISON", {"count": 79, "total": 195591804.5, "rejected": 16}], ["Nancy Oluchi Okolo", {"count": 247, "total": 120955094.49, "rejected": 1}], ["CHUKWUEBUKA UGOCHUKWU EGBO", {"count": 41, "total": 105314891.0, "rejected": 9}], ["\u5218\u8f89", {"count": 96, "total": 82147350, "rejected": 4}], ["MUSA UGBEDE BLESSING", {"count": 136, "total": 73049980.62, "rejected": 32}], ["IBRAHIM BIOLA ABDULSALAM", {"count": 78, "total": 57990038, "rejected": 11}], ["UDE DANIEL AGWU", {"count": 9, "total": 54337001, "rejected": 4}], ["NVENE HENRY CHUKWUEBUKA", {"count": 123, "total": 43766162.25, "rejected": 40}], ["YUNUS AKABA", {"count": 10, "total": 41875700.423999995, "rejected": 0}], ["OWEIBO IRIKEFE", {"count": 111, "total": 37778050.25, "rejected": 17}], ["RASHIDAT TEMITOPE RAIMI", {"count": 32, "total": 37158674.55, "rejected": 0}], ["OKECHUKWU ODIONYE NELSON", {"count": 47, "total": 27576801.5, "rejected": 11}], ["Efosa Edobor", {"count": 71, "total": 26698700, "rejected": 15}], ["GODS-POWER VICTOR MICHEAL", {"count": 92, "total": 23944161.25, "rejected": 4}], ["KOSSIGAH ROMEO GUELI", {"count": 13, "total": 22706084, "rejected": 0}], ["PATIENCE OGBENE OGBECHE", {"count": 34, "total": 20768263.5, "rejected": 10}], ["Onyeka Matthew Okeke", {"count": 34, "total": 18865487, "rejected": 9}], ["Guest User 14322", {"count": 6, "total": 16957180, "rejected": 1}], ["SODIQ RANTI ABDULFATAI", {"count": 66, "total": 15382927.5, "rejected": 20}], ["AIGBOKHAEBHO GABRIEL AJOGBOR", {"count": 84, "total": 15318700, "rejected": 0}], ["MABEL FAYOKEMI FAYOSHE", {"count": 18, "total": 14480386.54, "rejected": 4}], ["MURTALA MUHAMMAD AHMADU", {"count": 16, "total": 13473057.5, "rejected": 6}], ["Guest User 17726", {"count": 28, "total": 12277298.09, "rejected": 0}], ["THADDEUS DAMISAH", {"count": 31, "total": 11746032.48, "rejected": 3}], ["PROMISE C. ANYANWU", {"count": 16, "total": 10881312.5, "rejected": 4}], ["FLORENCE EKPEJU AKAH", {"count": 14, "total": 9678390, "rejected": 0}], ["TIMOTHY GBENRO ONIPEDE", {"count": 23, "total": 8836670, "rejected": 1}], ["NNAMDI CHIJIOKE ONWUSARAKA", {"count": 33, "total": 7950528.5, "rejected": 8}], ["Audu Godwin", {"count": 16, "total": 7554429.0, "rejected": 5}], ["ODAFE CLETUS JEMIGBEYI", {"count": 6, "total": 6925500, "rejected": 0}], ["IFEANYI BENEDICT ONWUACHUMBA", {"count": 36, "total": 5766135.02, "rejected": 7}], ["Guest User 83912", {"count": 2, "total": 5720629, "rejected": 1}], ["OMOLOLU ADEDOYIN ESAN", {"count": 22, "total": 5299256.96, "rejected": 5}], ["Guest User 97448", {"count": 2, "total": 4858900, "rejected": 0}], ["IFEOMA SAMPSON-ONUOHA", {"count": 3, "total": 4608261, "rejected": 0}], ["Guest User 90997", {"count": 2, "total": 4602930, "rejected": 0}], ["Guest User 11245", {"count": 2, "total": 4481000, "rejected": 0}], ["JAMES OSEMEKHIAN IMHOISI", {"count": 13, "total": 3686228.75, "rejected": 1}], ["JOSEPH ENOBONG EMMANUEL", {"count": 20, "total": 3517326, "rejected": 5}], ["ABDULGAFAR ONIMISI UMAR", {"count": 13, "total": 3514358, "rejected": 2}], ["Guest User 88040", {"count": 3, "total": 3446925, "rejected": 0}], ["ADEKUNLE OMOTAYO OLANREWAJU", {"count": 22, "total": 3291896.38, "rejected": 0}], ["SAMUEL OTU OTU", {"count": 21, "total": 3208142, "rejected": 5}], ["NKECHI JOY EDEM", {"count": 6, "total": 3026750.5, "rejected": 0}], ["Abdulrahman Adeiza Muhammed", {"count": 12, "total": 2778564, "rejected": 3}], ["Precious Ivie Eimankhu", {"count": 3, "total": 2220827.45, "rejected": 0}], ["TEJUMADE ABIODUN SHONOWO", {"count": 13, "total": 2131266.0, "rejected": 0}], ["ONOTU JIMOH", {"count": 9, "total": 1269050, "rejected": 1}], ["ADEDAYO ELIJAH OGUNOLA", {"count": 15, "total": 1238650, "rejected": 0}], ["KEHINDE ADEWALE HUNGBO", {"count": 7, "total": 553100, "rejected": 0}], ["ALEX ABAYOMI OLUMOROTI", {"count": 1, "total": 396150, "rejected": 0}], ["Guest User 83005", {"count": 1, "total": 344000, "rejected": 0}], ["ANTHONIA AYEWIALO ANEVHO", {"count": 20, "total": 309700, "rejected": 1}], ["Guest User 35801", {"count": 1, "total": 257750, "rejected": 1}], ["Guest User 94527", {"count": 3, "total": 167000, "rejected": 0}], ["EBENEZER ODUNAYO ABIOYE", {"count": 1, "total": 150000, "rejected": 0}], ["Md Abu Hasan", {"count": 3, "total": 140987, "rejected": 0}], ["HENRY ANABIU OKHIMAMHE", {"count": 5, "total": 121800, "rejected": 0}], ["ABIGAIL OLUWATOBI ODETOMI", {"count": 1, "total": 62500, "rejected": 0}], ["TEMITOPE OLUWAKEMI OLORUNSOLA", {"count": 4, "total": 59600, "rejected": 0}], ["CHINEDU HENRY NWABUISI", {"count": 2, "total": 45850, "rejected": 0}], ["Chika Ucheawuba Ilekuba", {"count": 2, "total": 14300, "rejected": 0}], ["VITUS OKWUCHI NJOKU", {"count": 1, "total": 14000, "rejected": 0}], ["Guest User 80059", {"count": 2, "total": 9600, "rejected": 0}]], "aging": {"0-7d": {"count": 97, "amount": 47363857.4}, "8-30d": {"count": 77, "amount": 40882889.74}, "31-60d": {"count": 22, "amount": 3847640}, "61-90d": {"count": 37, "amount": 5009000}, "90d+": {"count": 74, "amount": 10958657.2}}, "applyIn": [["9S", {"total": 2417328071.0739994, "count": 1236}], ["FOL", {"total": 443058011.7849999, "count": 2587}]], "dupByMonth": {"Jan": {"dupInv": 194, "dupLpo": 303}, "Feb": {"dupInv": 204, "dupLpo": 288}, "Mar": {"dupInv": 165, "dupLpo": 264}, "Apr": {"dupInv": 221, "dupLpo": 307}, "May": {"dupInv": 210, "dupLpo": 303}, "Jun": {"dupInv": 269, "dupLpo": 378}, "Jul": {"dupInv": 293, "dupLpo": 391}, "Aug": {"dupInv": 90, "dupLpo": 137}}, "monthlyTAT": [{"month": "Jan", "submitToMail": 0, "mailToPayment": 0, "overall": 0}, {"month": "Feb", "submitToMail": 0, "mailToPayment": 0, "overall": 0}, {"month": "Mar", "submitToMail": 0, "mailToPayment": 0, "overall": 0}, {"month": "Apr", "submitToMail": 0, "mailToPayment": 0, "overall": 0}, {"month": "May", "submitToMail": 0, "mailToPayment": 0, "overall": 0}, {"month": "Jun", "submitToMail": 0, "mailToPayment": 0, "overall": 0}, {"month": "Jul", "submitToMail": 0, "mailToPayment": 0, "overall": 0}, {"month": "Aug", "submitToMail": 0, "mailToPayment": 0, "overall": 0}], "tatDistribution": {"submitToMail": [{"label": "\u22641 day", "count": 0, "pct": 0}, {"label": "2-3 days", "count": 0, "pct": 0}, {"label": "4-7 days", "count": 0, "pct": 0}, {"label": "8+ days", "count": 0, "pct": 0}], "overall": [{"label": "2-3 days", "count": 0, "pct": 0}, {"label": "4-7 days", "count": 0, "pct": 0}, {"label": "8-14 days", "count": 0, "pct": 0}, {"label": "15+ days", "count": 0, "pct": 0}]}, "costCenterTAT": [{"name": "CC-Phone", "avgTAT": 0, "count": 2968}, {"name": "CC-Accessories", "avgTAT": 0, "count": 110}, {"name": "Itel Homes", "avgTAT": 0, "count": 28}, {"name": "Oraimo Accessories", "avgTAT": 0, "count": 66}, {"name": "ITEL Energy", "avgTAT": 0, "count": 132}, {"name": "Itel Accessories", "avgTAT": 0, "count": 61}, {"name": "CC-Home Appliance", "avgTAT": 0, "count": 159}, {"name": "West Africa - Region 1-Nigeria-New Business", "avgTAT": 0, "count": 23}, {"name": "Tecno Accessories", "avgTAT": 0, "count": 65}, {"name": "CC-Phone-HQ", "avgTAT": 0, "count": 51}, {"name": "Infinix Accessories", "avgTAT": 0, "count": 56}, {"name": "CC-Synix", "avgTAT": 0, "count": 2}, {"name": "WA-1 Region-Nigeria-CC-Electrical Applia", "avgTAT": 0, "count": 24}, {"name": "After-sales - Mobile Phone", "avgTAT": 0, "count": 24}, {"name": "CC-Niger Phone", "avgTAT": 0, "count": 24}, {"name": "WA-1-BJ-CC-Phone", "avgTAT": 0, "count": 23}, {"name": "WA-1 Region-Nigeria-CC-Netbook", "avgTAT": 0, "count": 6}, {"name": "CC-BJ PHONE", "avgTAT": 0, "count": 1}], "rawRecords": []};
@@ -201,8 +227,8 @@ function applyFilters() {
   const activePage = document.querySelector('.page.active');
   if (activePage) {
     const pageId = activePage.id;
-    const fnMap = {page1:renderPage1,page2:renderPage2,page3:renderPage3,page4:renderPage4,page5:renderPage5,page6:renderPage6,page7:renderPage7,page8:renderPage8,page9:renderPage9};
-    if (fnMap[pageId]) fnMap[pageId]();
+    const fnMap = {page1:renderPage1,page2:renderPage2,page3:renderPage3,page4:renderPage4,page5:renderPage5,page6:renderPage6,page7:renderPage7,page8:renderPage8,page9:renderPage9,page10:renderPage10};
+    if (fnMap[pageId]) { fnMap[pageId](); }
   }
 }
 
@@ -313,6 +339,16 @@ function fmtNGNM(n){return '₦'+(n/1e6).toFixed(1)+'M'}
 function fmtPct(n){return n.toFixed(1)+'%'}
 function safeDestroy(id){if(charts[id]){charts[id].destroy();delete charts[id]}}
 
+// ========== SIDEBAR COLLAPSIBLE GROUPS ==========
+function toggleGroup(groupId) {
+  const group = document.getElementById('group-' + groupId);
+  const toggle = document.getElementById('toggle-' + groupId);
+  if (group && toggle) {
+    group.classList.toggle('collapsed');
+    toggle.classList.toggle('collapsed');
+  }
+}
+
 // ========== NAVIGATION ==========
 document.querySelectorAll('.nav button').forEach(btn=>{
   btn.addEventListener('click',function(){
@@ -329,6 +365,7 @@ document.querySelectorAll('.nav button').forEach(btn=>{
     if(this.dataset.page==='page7')renderPage7();
     if(this.dataset.page==='page8')renderPage8();
     if(this.dataset.page==='page9')renderPage9();
+    if(this.dataset.page==='page10')renderPage10();
   });
 });
 
@@ -504,210 +541,122 @@ function renderPage2(){
   safeDestroy('et2');charts.et2=new Chart(document.getElementById('chartET2'),{type:'doughnut',data:{labels:expTypes.map(e=>e[0]),datasets:[{data:expTypes.map(e=>e[1].total),backgroundColor:[C.blue,C.teal],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:C.text,font:{size:10},padding:16}},tooltip:{callbacks:{label:function(c){return c.label+': '+fmtNGN(c.raw)+' ('+(c.raw/totalAmt*100).toFixed(1)+'%)'}}}}}});
   const maxSup=sup[0][1].total;document.getElementById('tblSup2').innerHTML=sup.slice(0,15).map((s,i)=>'<tr><td>'+(i+1)+'</td><td>'+s[0]+'</td><td class="mono">'+fmtNGNM(s[1].total)+' <span class="bar-mini" style="width:'+Math.max(4,(s[1].total/maxSup)*80)+'px;background:'+catColors[i%10]+'"></span></td><td>'+fmt(s[1].count)+'</td><td class="mono">'+fmtNGNM(s[1].total/s[1].count)+'</td></tr>').join('');
 }
-function renderPage3(){ [["PLEASE APPLY THROUGH 9S", {"count": 17, "amount": 19146230}], ["please attach mail approval", {"count": 15, "amount": 16707900}], ["pls split the cost center", {"count": 2, "amount": 14933448}], ["attach mail approval", {"count": 11, "amount": 12605000}], ["double application", {"count": 14, "amount": 12178720}], ["address to mirahub limited", {"count": 11, "amount": 7621900}], ["write LPO on the invoice", {"count": 4, "amount": 7525500}], ["please address to mirahub limited", {"count": 3, "amount": 6793500}], ["why purchase in retail price", {"count": 3, "amount": 6050500}], ["DOUBLE APPLICATION", {"count": 12, "amount": 5767100}]],
-  rejectionByRegion: [["South East", {"count": 21, "amount": 18462900}], ["Lagos", {"count": 14, "amount": 18719640}], ["South West", {"count": 7, "amount": 7213000}]],
-  rejectionReasons: [["PLEASE APPLY THROUGH 9S",{"count":17,"amount":19146230}],["please attach mail approval",{"count":15,"amount":16707900}],["pls split the cost center",{"count":2,"amount":14933448}],["attach mail approval",{"count":11,"amount":12605000}],["double application",{"count":14,"amount":12178720}],["address to mirahub limited",{"count":11,"amount":7621900}],["write LPO on the invoice",{"count":4,"amount":7525500}],["please address to mirahub limited",{"count":3,"amount":6793500}],["why purchase in retail price",{"count":3,"amount":6050500}],["DOUBLE APPLICATION",{"count":12,"amount":5767100}]],
-  rejectionByRegion: [["South East",{"count":21,"amount":18462900}],["Lagos",{"count":14,"amount":18719640}],["South West",{"count":7,"amount":7213000}]],
-  dupByMonth: {"Jan":{"dupInv":140,"dupLpo":64},"Feb":{"dupInv":60,"dupLpo":23}}};
-  const totalPending=s.pendingAmount;
-  document.getElementById('tblAging').querySelector('tbody').innerHTML=agingOrder.map(b=>{
-    const a=aging[b];
-    const pct=totalPending>0?(a.amount/totalPending*100).toFixed(1):'0.0';
-    return `<tr>
-      <td><span style="color:${agingColors[b]}">●</span> ${b}</td>
-      <td class="mono">${fmtNGNM(a.amount)}</td>
-      <td>${fmt(a.count)}</td>
-      <td>${pct}%</td>
-    </tr>`;
-  }).join('');
-}
-
-// ========== STUB PAGES ==========
-function stubPage(id,label){document.getElementById(id).innerHTML='<h2 class="page-title">'+label+'</h2><p style="color:var(--muted)">Coming in next stage...</p>'}
-function renderPage2(){
+function renderPage3(){
   const d=getFilteredData();recalcRates(d);const s=d.summary;
-  const cats=d.categories;
-  const cc=d.costCenters;
-  const sup=d.topSuppliers;
-  const expTypes=d.expenseTypes;
-  const totalAmt=s.totalAmount;
-  const avgTxn=totalAmt/s.totalRecords;
-  const topCat=cats[0];
-  const topRegion=d.regions[0];
-  const matCost=expTypes.find(e=>e[0]==='Material Cost');
-  const opCost=expTypes.find(e=>e[0]==='Operation Cost');
+  const monthly=d.monthly;
+  const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
 
-  document.getElementById('page2').innerHTML=`
-<h2 class="page-title">💰 Expense Analysis</h2>
-<div class="kpi-grid">
-<div class="kpi"><div class="kpi-val mono blue">${fmtNGNM(totalAmt)}</div><div class="kpi-lbl">Total Expense</div></div>
-<div class="kpi"><div class="kpi-val mono">${fmtNGNM(avgTxn)}</div><div class="kpi-lbl">Avg per Transaction</div><div class="kpi-sub">${fmt(s.totalRecords)} records</div></div>
-<div class="kpi"><div class="kpi-val mono" style="font-size:13px">${topCat[0]}</div><div class="kpi-lbl">Top Category</div><div class="kpi-sub">${fmtNGNM(topCat[1].total)} (${fmtPct(topCat[1].total/totalAmt*100)})</div></div>
-<div class="kpi"><div class="kpi-val mono">${topRegion[0]}</div><div class="kpi-lbl">Top Region</div><div class="kpi-sub">${fmtNGNM(topRegion[1].total)} (${fmtPct(topRegion[1].total/totalAmt*100)})</div></div>
-<div class="kpi"><div class="kpi-val mono green">${fmtNGNM(matCost[1].total)}</div><div class="kpi-lbl">Material Cost</div><div class="kpi-sub green">${fmtPct(matCost[1].total/totalAmt*100)} of total</div></div>
-<div class="kpi"><div class="kpi-val mono teal">${fmtNGNM(opCost[1].total)}</div><div class="kpi-lbl">Operation Cost</div><div class="kpi-sub teal">${fmtPct(opCost[1].total/totalAmt*100)} of total</div></div>
-</div>
-<div class="chart-row">
-<div class="chart-card"><h3>📊 Top 10 Categories by Spend</h3><canvas id="chartCat2"></canvas></div>
-<div class="chart-card"><h3>🏢 Cost Center Breakdown</h3><canvas id="chartCC"></canvas></div>
-</div>
-<div class="chart-row">
-<div class="chart-card"><h3>📈 Expense Type Monthly Trend</h3><canvas id="chartExpTrend"></canvas></div>
-<div class="chart-card"><h3>📦 Expense Type Split</h3><canvas id="chartET2"></canvas></div>
-</div>
-<div class="chart-row">
-<div class="chart-card"><h3>🔗 Top 15 Suppliers</h3><div class="overflow"><table><thead><tr><th>#</th><th>Supplier</th><th class="mono">Amount</th><th>Count</th><th class="mono">Avg</th></tr></thead><tbody id="tblSup2"></tbody></table></div></div>
-</div>`;
+  // Calculate derived metrics
+  const totalPaid=monthly.reduce((s,m)=>s+m.paid,0);
+  const totalRejected=monthly.reduce((s,m)=>s+m.rejected,0);
+  const totalPending=monthly.reduce((s,m)=>s+m.pending,0);
+  const totalRecordCount=monthly.reduce((s,m)=>s+m.count,0);
+  const bestMonth=monthly.reduce((a,b)=>b.paid>a.paid?b:a,monthly[0]);
+  const worstMonth=monthly.reduce((a,b)=>b.paid<a.paid?b:a,monthly[0]);
+  const bestMonthIdx=monthly.indexOf(bestMonth);
+  const worstMonthIdx=monthly.indexOf(worstMonth);
+  const avgMonthly=totalPaid/monthly.length;
+  const overallPaidRate=totalPaid+totalRejected+totalPending>0?(totalPaid/(totalPaid+totalRejected+totalPending)*100).toFixed(1):'0.0';
+
+  document.getElementById('page3').innerHTML='<h2 class="page-title">📈 Historical Analysis — 2026 (Jan–Aug)</h2>'+
+  '<div class="kpi-grid">'+
+  '<div class="kpi"><div class="kpi-val mono blue">'+fmtNGNM(totalPaid+totalRejected+totalPending)+'</div><div class="kpi-lbl">YTD Total Spend</div><div class="kpi-sub">'+fmt(totalRecordCount)+' records</div></div>'+
+  '<div class="kpi"><div class="kpi-val mono green">'+fmtNGNM(totalPaid)+'</div><div class="kpi-lbl">YTD Paid</div><div class="kpi-sub green">'+overallPaidRate+'% paid rate</div></div>'+
+  '<div class="kpi"><div class="kpi-val mono">'+fmtNGNM(avgMonthly)+'</div><div class="kpi-lbl">Avg Monthly Paid</div><div class="kpi-sub">Over '+monthly.length+' months</div></div>'+
+  '<div class="kpi"><div class="kpi-val mono green">'+monthNames[bestMonthIdx]+'</div><div class="kpi-lbl">Best Month</div><div class="kpi-sub green">'+fmtNGNM(bestMonth.paid)+' paid</div></div>'+
+  '<div class="kpi"><div class="kpi-val mono '+((worstMonth.paid<1e8)?'red':'amber')+'">'+monthNames[worstMonthIdx]+'</div><div class="kpi-lbl">Lowest Month</div><div class="kpi-sub">'+fmtNGNM(worstMonth.paid)+' paid</div></div>'+
+  '<div class="kpi"><div class="kpi-val mono red">'+fmtNGNM(totalRejected)+'</div><div class="kpi-lbl">YTD Rejected</div><div class="kpi-sub red">'+(totalRejected/(totalPaid+totalRejected+totalPending)*100).toFixed(1)+'% rate</div></div>'+
+  '<div class="kpi"><div class="kpi-val mono amber">'+fmtNGNM(totalPending)+'</div><div class="kpi-lbl">YTD Pending</div><div class="kpi-sub amber">'+(totalPending/(totalPaid+totalRejected+totalPending)*100).toFixed(1)+'% rate</div></div>'+
+  '</div>'+
+  '<div class="chart-row">'+
+  '<div class="chart-card full-width"><h3>📊 Monthly Stacked Trend — Paid vs Rejected vs Pending</h3><canvas id="chartHistStacked"></canvas></div>'+
+  '</div>'+
+  '<div class="chart-row">'+
+  '<div class="chart-card"><h3>📈 Cumulative Paid Trend</h3><canvas id="chartHistCumulative"></canvas></div>'+
+  '<div class="chart-card"><h3>📉 Rejected Amount by Month</h3><canvas id="chartHistRejected"></canvas></div>'+
+  '</div>'+
+  '<div class="chart-row">'+
+  '<div class="chart-card full-width"><h3>📋 Monthly Breakdown</h3><div class="overflow"><table id="tblHistMonthly"><thead><tr><th>Month</th><th class="mono">Total</th><th class="mono">Paid</th><th class="mono">Rejected</th><th class="mono">Pending</th><th>Count</th><th>Paid Rate</th></tr></thead><tbody></tbody></table></div></div>'+
+  '</div>';
 
   if(typeof Chart==='undefined')return;
   Chart.defaults.color=C.text;Chart.defaults.borderColor=C.grid;Chart.defaults.font.size=10;
 
-  // Top 10 Categories Donut
-  const topCats=cats.slice(0,10);
-  const catColors=[C.blue,C.green,C.purple,C.amber,C.teal,C.red,'#ec4899','#f97316','#6366f1','#06b6d4'];
-  safeDestroy('cat2');
-  charts.cat2=new Chart(document.getElementById('chartCat2'),{type:'doughnut',data:{labels:topCats.map(c=>c[0]),datasets:[{data:topCats.map(c=>c[1].total),backgroundColor:catColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:C.text,font:{size:10},padding:12}},tooltip:{callbacks:{label:function(c){return fmtNGN(c.raw)+' ('+(c.raw/totalAmt*100).toFixed(1)+'%)'}}}}}});
-
-  // Cost Center Horizontal Bar
-  const ccColors=[C.blue,C.green,C.purple,C.amber,C.teal,C.red,'#ec4899','#f97316','#6366f1','#06b6d4','#84cc16'];
-  safeDestroy('ccChart');
-  charts.ccChart=new Chart(document.getElementById('chartCC'),{type:'bar',data:{labels:cc.map(c=>c[0]),datasets:[{data:cc.map(c=>c[1].total/1e6),backgroundColor:ccColors,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return fmtNGN(c.raw*1e6)+' ('+(c.raw*1e6/totalAmt*100).toFixed(1)+'%)'}}}},scales:{x:{ticks:{callback:v=>'₦'+v+'M'},grid:{color:C.grid}}}}});
-
-  // Expense Type Monthly Trend Line Chart
-  const monthNames2 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
-  const f = getFilterState();
-  let trendLabel = 'All Expense Types';
-  let trendData = d.monthly.map(m => m.total / 1e6);
-  const trendColor = f.expType === 'Material Cost' ? C.blue : f.expType === 'Operation Cost' ? C.teal : C.purple;
-  
-  if (f.expType !== 'all') {
-    trendLabel = f.expType;
-    const et = d.expenseTypes.find(e => e[0] === f.expType);
-    if (et) {
-      const ratio = et[1].total / d.summary.totalAmount;
-      trendData = d.monthly.map(m => m.total * ratio / 1e6);
-    }
-  }
-  if (f.region !== 'all') {
-    trendLabel += ' - ' + f.region;
-    const reg = d.regions.find(r => r[0] === f.region);
-    if (reg) {
-      trendData = trendData.map(v => v * (reg[1].total / d.summary.totalAmount));
-    }
-  }
-  if (f.category !== 'all') {
-    trendLabel += ' - ' + f.category;
-    const cat = d.categories.find(c => c[0] === f.category);
-    if (cat) {
-      trendData = d.monthly.map(m => m.total * (cat[1].total / d.summary.totalAmount) / 1e6);
-    }
-  }
-  
-  safeDestroy('expTrend');
-  charts.expTrend = new Chart(document.getElementById('chartExpTrend'), {
-    type: 'line',
-    data: {
-      labels: monthNames2,
-      datasets: [{
-        label: trendLabel,
-        data: trendData,
-        borderColor: trendColor,
-        backgroundColor: trendColor + '20',
-        borderWidth: 2,
-        fill: true,
-        tension: 0.3,
-        pointRadius: 4,
-        pointBackgroundColor: trendColor
-      }]
+  // Stacked Bar: Paid vs Rejected vs Pending
+  safeDestroy('histStacked');
+  charts.histStacked=new Chart(document.getElementById('chartHistStacked'),{
+    type:'bar',
+    data:{
+      labels:monthNames,
+      datasets:[
+        {label:'Paid',data:monthly.map(m=>m.paid/1e6),backgroundColor:C.green,borderRadius:4,barPercentage:.7},
+        {label:'Rejected',data:monthly.map(m=>m.rejected/1e6),backgroundColor:C.red,borderRadius:4,barPercentage:.7},
+        {label:'Pending',data:monthly.map(m=>m.pending/1e6),backgroundColor:C.amber,borderRadius:4,barPercentage:.7}
+      ]
     },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: C.text, font: { size: 10 } } },
-        tooltip: { callbacks: { label: function(c) { return c.dataset.label + ': ₦' + c.raw.toFixed(1) + 'M'; } } }
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:C.text,font:{size:10},usePointStyle:true}},
+        tooltip:{callbacks:{label:function(c){return c.dataset.label+': ₦'+c.raw.toFixed(1)+'M'}}}
       },
-      scales: {
-        x: { grid: { display: false } },
-        y: { ticks: { callback: v => '₦' + v + 'M' }, grid: { color: C.grid } }
+      scales:{
+        x:{stacked:true,grid:{display:false}},
+        y:{stacked:true,ticks:{callback:v=>'₦'+v+'M'},grid:{color:C.grid}}
       }
     }
   });
 
-  // Expense Type Donut
-  safeDestroy('et2');
-  charts.et2=new Chart(document.getElementById('chartET2'),{type:'doughnut',data:{labels:expTypes.map(e=>e[0]),datasets:[{data:expTypes.map(e=>e[1].total),backgroundColor:[C.blue,C.teal],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:C.text,font:{size:10},padding:16}},tooltip:{callbacks:{label:function(c){return c.label+': '+fmtNGN(c.raw)+' ('+(c.raw/totalAmt*100).toFixed(1)+'%)'}}}}}});
+  // Cumulative Paid Trend
+  let cum=0;
+  const cumData=monthly.map(m=>{cum+=m.paid;return cum/1e6});
+  safeDestroy('histCumulative');
+  charts.histCumulative=new Chart(document.getElementById('chartHistCumulative'),{
+    type:'line',
+    data:{
+      labels:monthNames,
+      datasets:[{label:'Cumulative Paid',data:cumData,borderColor:C.blue,backgroundColor:C.blue+'20',borderWidth:2,fill:true,tension:.3,pointRadius:5,pointBackgroundColor:C.blue}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:C.text,font:{size:10}}},
+        tooltip:{callbacks:{label:function(c){return 'Cumulative: ₦'+c.raw.toFixed(1)+'M'}}}
+      },
+      scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>'₦'+v+'M'},grid:{color:C.grid}}}
+    }
+  });
 
-  // Top 15 Suppliers Table
-  const maxSup=sup[0][1].total;
-  document.getElementById('tblSup2').innerHTML=sup.slice(0,15).map((s,i)=>`<tr><td>${i+1}</td><td>${s[0]}</td><td class="mono">${fmtNGNM(s[1].total)} <span class="bar-mini" style="width:${Math.max(4,(s[1].total/maxSup)*80)}px;background:${catColors[i%10]}"></span></td><td>${fmt(s[1].count)}</td><td class="mono">${fmtNGNM(s[1].total/s[1].count)}</td></tr>`).join('');
-}
-function renderPage3(){
-  const d=getFilteredData();recalcRates(d);const s=d.summary;
-  const monthly=d.monthly;
-  const totalAmt=s.totalAmount;
-  const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
-
-  // Compute stats
-  const totals=monthly.map(m=>m.total);
-  const highest=monthly.reduce((a,b)=>b.total>a.total?b:a,monthly[0]);
-  const lowest=monthly.reduce((a,b)=>b.total<a.total?b:a,monthly[0]);
-  const avgMonthly=totalAmt/monthly.length;
-  const hiIdx=monthly.indexOf(highest);
-  const loIdx=monthly.indexOf(lowest);
-
-  document.getElementById('page3').innerHTML=`
-<h2 class="page-title">📈 Historical Analysis — 2026 (Jan–Aug)</h2>
-<div class="kpi-grid">
-<div class="kpi"><div class="kpi-val mono blue">${fmtNGNM(totalAmt)}</div><div class="kpi-lbl">Total YTD</div><div class="kpi-sub">${fmt(s.totalRecords)} transactions</div></div>
-<div class="kpi"><div class="kpi-val mono green">${monthNames[hiIdx]} ${fmtNGNM(highest.total)}</div><div class="kpi-lbl">Highest Month</div><div class="kpi-sub green">${fmt(highest.count)} transactions</div></div>
-<div class="kpi"><div class="kpi-val mono red">${monthNames[loIdx]} ${fmtNGNM(lowest.total)}</div><div class="kpi-lbl">Lowest Month</div><div class="kpi-sub red">${fmt(lowest.count)} transactions</div></div>
-<div class="kpi"><div class="kpi-val mono">${fmtNGNM(avgMonthly)}</div><div class="kpi-lbl">Avg Monthly</div><div class="kpi-sub">${fmt(avgMonthly/s.totalRecords*monthly.length)} txns/mo avg</div></div>
-<div class="kpi"><div class="kpi-val mono green">${s.paidRate}%</div><div class="kpi-lbl">Paid Rate YTD</div></div>
-<div class="kpi"><div class="kpi-val mono red">${s.rejectedRate}%</div><div class="kpi-lbl">Rejected Rate YTD</div></div>
-</div>
-<div class="chart-row">
-<div class="chart-card full-width"><h3>📈 Monthly Total Spend Trend (₦M)</h3><canvas id="chartMonthlyTrend"></canvas></div>
-</div>
-<div class="chart-row">
-<div class="chart-card full-width"><h3>📊 Monthly Status Breakdown — Paid vs Rejected vs Pending</h3><canvas id="chartMonthlyStack"></canvas></div>
-</div>
-<div class="table-grid">
-<div class="table-card full-width"><h3>📋 Monthly Breakdown</h3><div class="overflow"><table><thead><tr><th>Month</th><th class="mono">Total</th><th>Count</th><th class="mono">Paid</th><th class="mono">Rejected</th><th class="mono">Pending</th><th class="mono">Avg/Txn</th><th>Paid Rate</th></tr></thead><tbody id="tblMonthly"></tbody></table></div></div>
-</div>`;
-
-  if(typeof Chart==='undefined')return;
-  Chart.defaults.color=C.text;Chart.defaults.borderColor=C.grid;Chart.defaults.font.size=10;
-
-  // Monthly Trend Line Chart
-  safeDestroy('mTrend2');
-  charts.mTrend2=new Chart(document.getElementById('chartMonthlyTrend'),{type:'line',data:{labels:monthNames,datasets:[
-    {label:'Total Spend',data:monthly.map(m=>m.total/1e6),borderColor:C.blue,backgroundColor:C.blue+'33',tension:.4,fill:true,pointRadius:5,pointBackgroundColor:C.blue,borderWidth:2}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:C.text,font:{size:10},usePointStyle:true}},tooltip:{callbacks:{label:c=>fmtNGN(c.raw*1e6)}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>'₦'+v+'M'},grid:{color:C.grid}}}}});
-
-  // Stacked Bar: Paid vs Rejected vs Pending
-  safeDestroy('mStack');
-  charts.mStack=new Chart(document.getElementById('chartMonthlyStack'),{type:'bar',data:{labels:monthNames,datasets:[
-    {label:'Paid',data:monthly.map(m=>m.paid/1e6),backgroundColor:C.green,borderRadius:4,barPercentage:.7},
-    {label:'Rejected',data:monthly.map(m=>m.rejected/1e6),backgroundColor:C.red,borderRadius:4,barPercentage:.7},
-    {label:'Pending',data:monthly.map(m=>m.pending/1e6),backgroundColor:C.amber,borderRadius:4,barPercentage:.7}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:C.text,font:{size:10},usePointStyle:true}},tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+fmtNGN(c.raw*1e6)}}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>'₦'+v+'M'},grid:{color:C.grid}}}}});
+  // Rejected Amount by Month
+  safeDestroy('histRejected');
+  charts.histRejected=new Chart(document.getElementById('chartHistRejected'),{
+    type:'bar',
+    data:{
+      labels:monthNames,
+      datasets:[{data:monthly.map(m=>m.rejected/1e6),backgroundColor:C.red,borderRadius:4,barPercentage:.7}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return 'Rejected: ₦'+c.raw.toFixed(1)+'M'}}}},
+      scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>'₦'+v+'M'},grid:{color:C.grid}}}
+    }
+  });
 
   // Monthly Breakdown Table
-  document.getElementById('tblMonthly').innerHTML=monthly.map((m,i)=>{
-    const paidRate=m.total>0?(m.paid/m.total*100).toFixed(1):'0.0';
-    const avgTxn=m.count>0?m.total/m.count:0;
-    const moColor=paidRate>=85?C.green:paidRate>=70?C.amber:C.red;
-    return `<tr>
-      <td><strong>${monthNames[i]}</strong></td>
-      <td class="mono">${fmtNGNM(m.total)}</td>
-      <td>${fmt(m.count)}</td>
-      <td class="mono green">${fmtNGNM(m.paid)}</td>
-      <td class="mono red">${fmtNGNM(m.rejected)}</td>
-      <td class="mono amber">${m.pending>0?fmtNGNM(m.pending):'—'}</td>
-      <td class="mono">${fmtNGNM(avgTxn)}</td>
-      <td style="color:${moColor};font-weight:600">${paidRate}%</td>
-    </tr>`;
-  }).join('')+`<tr style="font-weight:600;border-top:2px solid ${C.border}"><td><strong>YTD</strong></td><td class="mono">${fmtNGNM(totalAmt)}</td><td>${fmt(s.totalRecords)}</td><td class="mono green">${fmtNGNM(s.paidAmount)}</td><td class="mono red">${fmtNGNM(s.rejectedAmount)}</td><td class="mono amber">${fmtNGNM(s.pendingAmount)}</td><td class="mono">${fmtNGNM(totalAmt/s.totalRecords)}</td><td style="color:${C.green};font-weight:600">${s.paidRate}%</td></tr>`;
+  document.getElementById('tblHistMonthly').querySelector('tbody').innerHTML=monthly.map((m,i)=>{
+    const mTotal=m.paid+m.rejected+m.pending;
+    const paidRate=mTotal>0?(m.paid/mTotal*100).toFixed(1):'0.0';
+    const paidRateColor=parseFloat(paidRate)>=90?C.green:parseFloat(paidRate)>=70?C.amber:C.red;
+    return '<tr>'+
+      '<td>'+monthNames[i]+'</td>'+
+      '<td class="mono">'+fmtNGNM(mTotal)+'</td>'+
+      '<td class="mono green">'+fmtNGNM(m.paid)+'</td>'+
+      '<td class="mono red">'+fmtNGNM(m.rejected)+'</td>'+
+      '<td class="mono amber">'+fmtNGNM(m.pending)+'</td>'+
+      '<td>'+fmt(m.count)+'</td>'+
+      '<td class="mono" style="color:'+paidRateColor+'">'+paidRate+'%</td>'+
+    '</tr>';
+  }).join('');
 }
 function renderPage4(){
   const d=getFilteredData();recalcRates(d);const s=d.summary;
@@ -1219,6 +1168,10 @@ function renderPage9(){
       <td class="${regPct>30?'green':'amber'}">${fmtPct(regPct)}</td>
     </tr>`;
   }).join('');
+}
+
+function renderPage10(){
+  document.getElementById('page10').innerHTML='<h2 class="page-title">📥 Income — Coming Soon</h2><p style="color:var(--muted);padding:40px;text-align:center">Income analysis features are under development. Stay tuned.</p>';
 }
 
 // ========== INIT: Render immediately (no fetch needed for page1) ==========
