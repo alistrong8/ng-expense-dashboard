@@ -204,10 +204,10 @@ const dashboardData = {
 const filterState = {month:'all',region:'all',category:'all',expType:'all',costCenter:'all',status:'all',applyIn:'all'};
 
 function initFilters() {
-  const cats = dashboardData.categories.map(c => c[0]);
-  const regions = dashboardData.regions.map(r => r[0]);
-  const cc = dashboardData.costCenters.map(c => c[0]);
-  const expTypes = dashboardData.expenseTypes.map(e => e[0]);
+  const cats = d.categories.map(c => c[0]);
+  const regions = d.regions.map(r => r[0]);
+  const cc = d.costCenters.map(c => c[0]);
+  const expTypes = d.expenseTypes.map(e => e[0]);
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   const opts = (list, sel) => list.map(v => `<option value="${v}">${v}</option>`).join('');
@@ -263,6 +263,93 @@ function resetFilters() {
 // ========== INIT FILTERS ON LOAD ==========
 initFilters();
 
+
+// ========== FILTERED DATA UTILITY ==========
+function getFilteredData() {
+  const f = getFilterState();
+  const hasFilter = hasActiveFilter();
+  if (!hasFilter) return dashboardData;
+
+  // Deep clone the dashboard data
+  const d = JSON.parse(JSON.stringify(dashboardData));
+  const totalAmt = d.summary.totalAmount;
+
+  // Calculate region ratio
+  let regionRatio = 1;
+  if (f.region !== 'all') {
+    const reg = d.regions.find(r => r[0] === f.region);
+    if (reg) regionRatio = reg[1].total / totalAmt;
+  }
+
+  // Calculate category ratio
+  let catRatio = 1;
+  if (f.category !== 'all') {
+    const cat = d.categories.find(c => c[0] === f.category);
+    if (cat) catRatio = cat[1].total / totalAmt;
+  }
+
+  // Calculate expense type ratio
+  let etRatio = 1;
+  if (f.expType !== 'all') {
+    const et = d.expenseTypes.find(e => e[0] === f.expType);
+    if (et) etRatio = et[1].total / totalAmt;
+  }
+
+  // Calculate cost center ratio
+  let ccRatio = 1;
+  if (f.costCenter !== 'all') {
+    const cc = d.costCenters.find(c => c[0] === f.costCenter);
+    if (cc) ccRatio = cc[1].total / totalAmt;
+  }
+
+  const combinedRatio = regionRatio * catRatio * etRatio * ccRatio;
+
+  // Apply proportional scaling to monthly data
+  d.monthly = d.monthly.map(m => ({
+    ...m,
+    total: Math.round(m.total * combinedRatio),
+    paid: Math.round(m.paid * combinedRatio),
+    rejected: Math.round(m.rejected * combinedRatio),
+    pending: Math.round(m.pending * combinedRatio),
+    count: Math.round(m.count * combinedRatio)
+  }));
+
+  // Scale summary
+  d.summary.totalAmount = Math.round(totalAmt * combinedRatio);
+  d.summary.paidAmount = Math.round(d.summary.paidAmount * combinedRatio);
+  d.summary.rejectedAmount = Math.round(d.summary.rejectedAmount * combinedRatio);
+  d.summary.pendingAmount = Math.round(d.summary.pendingAmount * combinedRatio);
+  d.summary.totalRecords = Math.round(d.summary.totalRecords * combinedRatio);
+  d.summary.paidCount = Math.round(d.summary.paidCount * combinedRatio);
+  d.summary.rejectedCount = Math.round(d.summary.rejectedCount * combinedRatio);
+  d.summary.pendingCount = Math.round(d.summary.pendingCount * combinedRatio);
+
+  // Scale categories
+  d.categories = d.categories.map(c => [c[0], {total: Math.round(c[1].total * combinedRatio), count: Math.round(c[1].count * combinedRatio)}]);
+  d.expenseTypes = d.expenseTypes.map(e => [e[0], {total: Math.round(e[1].total * combinedRatio), count: Math.round(e[1].count * combinedRatio)}]);
+  d.regions = d.regions.map(r => [r[0], {total: Math.round(r[1].total * combinedRatio), count: Math.round(r[1].count * combinedRatio)}]);
+  d.costCenters = d.costCenters.map(c => [c[0], {total: Math.round(c[1].total * combinedRatio), count: Math.round(c[1].count * combinedRatio)}]);
+  d.topSuppliers = d.topSuppliers.map(s => [s[0], {total: Math.round(s[1].total * combinedRatio), count: Math.round(s[1].count * combinedRatio)}]);
+  d.people = d.people.map(p => [p[0], {count: Math.round(p[1].count * combinedRatio), total: Math.round(p[1].total * combinedRatio), rejected: Math.round(p[1].rejected * combinedRatio)}]);
+
+  // Scale aging
+  for (const k of Object.keys(d.aging)) {
+    d.aging[k].amount = Math.round(d.aging[k].amount * combinedRatio);
+    d.aging[k].count = Math.round(d.aging[k].count * combinedRatio);
+  }
+
+  return d;
+}
+
+// Recalculate rates after filtering
+function recalcRates(d) {
+  const t = d.summary;
+  t.paidRate = t.totalAmount > 0 ? (t.paidAmount / t.totalAmount * 100).toFixed(1) : '0.0';
+  t.rejectedRate = t.totalAmount > 0 ? (t.rejectedAmount / t.totalAmount * 100).toFixed(1) : '0.0';
+  t.pendingRate = t.totalAmount > 0 ? (t.pendingAmount / t.totalAmount * 100).toFixed(1) : '0.0';
+  return d;
+}
+
 // ========== UTILITY FUNCTIONS ==========
 const C={green:'#10b981',red:'#ef4444',amber:'#f59e0b',blue:'#3b82f6',purple:'#8b5cf6',teal:'#14b8a6',grid:'rgba(255,255,255,0.04)',text:'#6b7280'};
 let charts={};
@@ -294,7 +381,7 @@ document.querySelectorAll('.nav button').forEach(btn=>{
 
 // ========== RENDER PAGE 1: EXECUTIVE OVERVIEW ==========
 function renderPage1(){
-  const s=dashboardData.summary;
+  const d=getFilteredData();recalcRates(d);const s=d.summary;
   const totalAmt=s.totalAmount;
 
   // --- KPI Cards ---
@@ -313,15 +400,15 @@ function renderPage1(){
   Chart.defaults.color=C.text;Chart.defaults.borderColor=C.grid;Chart.defaults.font.size=10;
 
   // --- Chart 1: Monthly Trend (Stacked: Paid vs Rejected) ---
-  const monthNames=dashboardData.monthly.map(m=>['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'][dashboardData.monthly.indexOf(m)]);
+  const monthNames=d.monthly.map(m=>['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'][d.monthly.indexOf(m)]);
   safeDestroy('mTrend');
   charts.mTrend=new Chart(document.getElementById('chartMonthly'),{
     type:'bar',
     data:{
       labels:monthNames,
       datasets:[
-        {label:'Paid',data:dashboardData.monthly.map(m=>m.paid/1e6),backgroundColor:C.green,borderRadius:4,barPercentage:.7},
-        {label:'Rejected',data:dashboardData.monthly.map(m=>m.rejected/1e6),backgroundColor:C.red,borderRadius:4,barPercentage:.7}
+        {label:'Paid',data:d.monthly.map(m=>m.paid/1e6),backgroundColor:C.green,borderRadius:4,barPercentage:.7},
+        {label:'Rejected',data:d.monthly.map(m=>m.rejected/1e6),backgroundColor:C.red,borderRadius:4,barPercentage:.7}
       ]
     },
     options:{
@@ -338,7 +425,7 @@ function renderPage1(){
   });
 
   // --- Chart 2: Top 10 Categories (Doughnut) ---
-  const topCats=dashboardData.categories.slice(0,10);
+  const topCats=d.categories.slice(0,10);
   const catColors=[C.blue,C.green,C.purple,C.amber,C.teal,C.red,'#ec4899','#f97316','#6366f1','#06b6d4'];
   safeDestroy('catChart');
   charts.catChart=new Chart(document.getElementById('chartCat'),{
@@ -361,8 +448,8 @@ function renderPage1(){
   charts.expTypeChart=new Chart(document.getElementById('chartExpType'),{
     type:'pie',
     data:{
-      labels:dashboardData.expenseTypes.map(e=>e[0]),
-      datasets:[{data:dashboardData.expenseTypes.map(e=>e[1].total),backgroundColor:[C.blue,C.teal],borderWidth:0}]
+      labels:d.expenseTypes.map(e=>e[0]),
+      datasets:[{data:d.expenseTypes.map(e=>e[1].total),backgroundColor:[C.blue,C.teal],borderWidth:0}]
     },
     options:{
       responsive:true,maintainAspectRatio:false,
@@ -374,7 +461,7 @@ function renderPage1(){
   });
 
   // --- Chart 4: Region Distribution (Horizontal Bar) ---
-  const regions=dashboardData.regions;
+  const regions=d.regions;
   const regColors=[C.blue,C.green,C.purple,C.amber,C.teal,C.red,'#ec4899'];
   safeDestroy('regChart');
   charts.regChart=new Chart(document.getElementById('chartRegion'),{
@@ -396,8 +483,8 @@ function renderPage1(){
 
   // --- Tables ---
   // Top 10 Suppliers
-  const maxSuppAmt=dashboardData.topSuppliers[0][1].total;
-  document.getElementById('tblSuppliers').querySelector('tbody').innerHTML=dashboardData.topSuppliers.slice(0,10).map((s,i)=>`
+  const maxSuppAmt=d.topSuppliers[0][1].total;
+  document.getElementById('tblSuppliers').querySelector('tbody').innerHTML=d.topSuppliers.slice(0,10).map((s,i)=>`
     <tr>
       <td>${i+1}</td>
       <td>${s[0]}</td>
@@ -406,8 +493,8 @@ function renderPage1(){
     </tr>`).join('');
 
   // Top 10 People
-  const maxPplAmt=dashboardData.people[0][1].total;
-  document.getElementById('tblPeople').querySelector('tbody').innerHTML=dashboardData.people.slice(0,10).map((p,i)=>`
+  const maxPplAmt=d.people[0][1].total;
+  document.getElementById('tblPeople').querySelector('tbody').innerHTML=d.people.slice(0,10).map((p,i)=>`
     <tr>
       <td>${i+1}</td>
       <td>${p[0]}</td>
@@ -417,7 +504,7 @@ function renderPage1(){
     </tr>`).join('');
 
   // Aging Breakdown
-  const aging=dashboardData.aging;
+  const aging=d.aging;
   const agingOrder=['0-7d','8-30d','31-60d','61-90d','90d+'];
   const agingColors={'0-7d':C.green,'8-30d':C.blue,'31-60d':C.amber,'61-90d':C.purple,'90d+':C.red,
   rejectionReasons: [["PLEASE APPLY THROUGH 9S", {"count": 17, "amount": 19146230}], ["please attach mail approval", {"count": 15, "amount": 16707900}], ["pls split the cost center", {"count": 2, "amount": 14933448}], ["attach mail approval", {"count": 11, "amount": 12605000}], ["double application", {"count": 14, "amount": 12178720}], ["address to mirahub limited", {"count": 11, "amount": 7621900}], ["write LPO on the invoice", {"count": 4, "amount": 7525500}], ["please address to mirahub limited", {"count": 3, "amount": 6793500}], ["why purchase in retail price", {"count": 3, "amount": 6050500}], ["DOUBLE APPLICATION", {"count": 12, "amount": 5767100}]],
@@ -439,15 +526,15 @@ function renderPage1(){
 // ========== STUB PAGES ==========
 function stubPage(id,label){document.getElementById(id).innerHTML='<h2 class="page-title">'+label+'</h2><p style="color:var(--muted)">Coming in next stage...</p>'}
 function renderPage2(){
-  const s=dashboardData.summary;
-  const cats=dashboardData.categories;
-  const cc=dashboardData.costCenters;
-  const sup=dashboardData.topSuppliers;
-  const expTypes=dashboardData.expenseTypes;
+  const d=getFilteredData();recalcRates(d);const s=d.summary;
+  const cats=d.categories;
+  const cc=d.costCenters;
+  const sup=d.topSuppliers;
+  const expTypes=d.expenseTypes;
   const totalAmt=s.totalAmount;
   const avgTxn=totalAmt/s.totalRecords;
   const topCat=cats[0];
-  const topRegion=dashboardData.regions[0];
+  const topRegion=d.regions[0];
   const matCost=expTypes.find(e=>e[0]==='Material Cost');
   const opCost=expTypes.find(e=>e[0]==='Operation Cost');
 
@@ -491,29 +578,29 @@ function renderPage2(){
   const monthNames2 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
   const f = getFilterState();
   let trendLabel = 'All Expense Types';
-  let trendData = dashboardData.monthly.map(m => m.total / 1e6);
+  let trendData = d.monthly.map(m => m.total / 1e6);
   const trendColor = f.expType === 'Material Cost' ? C.blue : f.expType === 'Operation Cost' ? C.teal : C.purple;
   
   if (f.expType !== 'all') {
     trendLabel = f.expType;
-    const et = dashboardData.expenseTypes.find(e => e[0] === f.expType);
+    const et = d.expenseTypes.find(e => e[0] === f.expType);
     if (et) {
-      const ratio = et[1].total / dashboardData.summary.totalAmount;
-      trendData = dashboardData.monthly.map(m => m.total * ratio / 1e6);
+      const ratio = et[1].total / d.summary.totalAmount;
+      trendData = d.monthly.map(m => m.total * ratio / 1e6);
     }
   }
   if (f.region !== 'all') {
     trendLabel += ' - ' + f.region;
-    const reg = dashboardData.regions.find(r => r[0] === f.region);
+    const reg = d.regions.find(r => r[0] === f.region);
     if (reg) {
-      trendData = trendData.map(v => v * (reg[1].total / dashboardData.summary.totalAmount));
+      trendData = trendData.map(v => v * (reg[1].total / d.summary.totalAmount));
     }
   }
   if (f.category !== 'all') {
     trendLabel += ' - ' + f.category;
-    const cat = dashboardData.categories.find(c => c[0] === f.category);
+    const cat = d.categories.find(c => c[0] === f.category);
     if (cat) {
-      trendData = dashboardData.monthly.map(m => m.total * (cat[1].total / dashboardData.summary.totalAmount) / 1e6);
+      trendData = d.monthly.map(m => m.total * (cat[1].total / d.summary.totalAmount) / 1e6);
     }
   }
   
@@ -556,8 +643,8 @@ function renderPage2(){
   document.getElementById('tblSup2').innerHTML=sup.slice(0,15).map((s,i)=>`<tr><td>${i+1}</td><td>${s[0]}</td><td class="mono">${fmtNGNM(s[1].total)} <span class="bar-mini" style="width:${Math.max(4,(s[1].total/maxSup)*80)}px;background:${catColors[i%10]}"></span></td><td>${fmt(s[1].count)}</td><td class="mono">${fmtNGNM(s[1].total/s[1].count)}</td></tr>`).join('');
 }
 function renderPage3(){
-  const s=dashboardData.summary;
-  const monthly=dashboardData.monthly;
+  const d=getFilteredData();recalcRates(d);const s=d.summary;
+  const monthly=d.monthly;
   const totalAmt=s.totalAmount;
   const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
 
@@ -624,10 +711,10 @@ function renderPage3(){
   }).join('')+`<tr style="font-weight:600;border-top:2px solid ${C.border}"><td><strong>YTD</strong></td><td class="mono">${fmtNGNM(totalAmt)}</td><td>${fmt(s.totalRecords)}</td><td class="mono green">${fmtNGNM(s.paidAmount)}</td><td class="mono red">${fmtNGNM(s.rejectedAmount)}</td><td class="mono amber">${fmtNGNM(s.pendingAmount)}</td><td class="mono">${fmtNGNM(totalAmt/s.totalRecords)}</td><td style="color:${C.green};font-weight:600">${s.paidRate}%</td></tr>`;
 }
 function renderPage4(){
-  const s=dashboardData.summary;
+  const d=getFilteredData();recalcRates(d);const s=d.summary;
   const tat=s.avgTAT;
-  const mtat=dashboardData.monthlyTAT;
-  const tdist=dashboardData.tatDistribution;
+  const mtat=d.monthlyTAT;
+  const tdist=d.tatDistribution;
   let fastest=mtat[0],slowest=mtat[0];
   mtat.forEach(m=>{if(m.overall<fastest.overall)fastest=m;if(m.overall>slowest.overall)slowest=m});
   const slaRate=49.4;
@@ -670,15 +757,15 @@ function renderPage4(){
   charts.tatDist=new Chart(document.getElementById('chartTATDist'),{type:'bar',data:{labels:tdist.overall.map(d=>d.label),datasets:[{data:tdist.overall.map(d=>d.pct),backgroundColor:[C.green,C.blue,C.amber,C.red],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+'% ('+tdist.overall[c.dataIndex].count+' records)'}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>v+'%'},grid:{color:C.grid}}}}});
   safeDestroy('tatSubmitMail');
   charts.tatSubmitMail=new Chart(document.getElementById('chartTATSubmitMail'),{type:'bar',data:{labels:tdist.submitToMail.map(d=>d.label),datasets:[{data:tdist.submitToMail.map(d=>d.pct),backgroundColor:[C.green,C.blue,C.amber,C.red],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+'% ('+tdist.submitToMail[c.dataIndex].count+' records)'}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>v+'%'},grid:{color:C.grid}}}}});
-  const ccTAT=dashboardData.costCenterTAT;
+  const ccTAT=d.costCenterTAT;
   const maxCC=Math.max(...ccTAT.map(c=>c.avgTAT));
   const ccColors=[C.green,C.blue,C.amber,C.purple,C.teal,C.red,'#ec4899','#f97316','#6366f1','#06b6d4','#84cc16'];
   document.getElementById('tblCCTAT').querySelector('tbody').innerHTML=ccTAT.map((c,i)=>`<tr><td>${i+1}</td><td>${c.name}</td><td class="mono"><span class="bar-mini" style="width:${Math.max(4,(c.avgTAT/maxCC)*80)}px;background:${ccColors[i%ccColors.length]}"></span>${c.avgTAT.toFixed(1)}d</td><td>${fmt(c.count)}</td></tr>`).join('');
 }
 function renderPage5(){
-  const s=dashboardData.summary;
-  const aging=dashboardData.aging;
-  const monthly=dashboardData.monthly;
+  const d=getFilteredData();recalcRates(d);const s=d.summary;
+  const aging=d.aging;
+  const monthly=d.monthly;
   const agingOrder=['0-7d','8-30d','31-60d','61-90d','90d+'];
   const agingColorsAll={'0-7d':C.green,'8-30d':C.blue,'31-60d':C.amber,'61-90d':C.purple,'90d+':C.red};
   const totalAgingCnt=agingOrder.reduce((sum,k)=>sum+aging[k].count,0);
@@ -730,11 +817,11 @@ ${agingOrder.map(b=>{const a=aging[b];const pct=totalAgingAmt>0?(a.amount/totalA
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:C.text,font:{size:10},usePointStyle:true},tooltip:{callbacks:{label:function(c){if(c.datasetIndex===0)return'Count: '+fmt(c.raw);return'Amount: '+fmtNGNM(c.raw*1e6)}}}}},scales:{x:{grid:{display:false}},y:{position:'left',title:{display:true,text:'Count',color:C.text},ticks:{callback:v=>fmt(v)},grid:{color:C.grid}},y1:{position:'right',title:{display:true,text:'Amount (₦M)',color:C.text},ticks:{callback:v=>'₦'+v+'M'},grid:{display:false}}}}});
 }
 function renderPage6(){
-  const s=dashboardData.summary;
-  const monthly=dashboardData.monthly;
-  const rejReasons=dashboardData.rejectionReasons;
-  const rejByRegion=dashboardData.rejectionByRegion;
-  const people=dashboardData.people;
+  const d=getFilteredData();recalcRates(d);const s=d.summary;
+  const monthly=d.monthly;
+  const rejReasons=d.rejectionReasons;
+  const rejByRegion=d.rejectionByRegion;
+  const people=d.people;
   const avgRej=s.rejectedCount>0?Math.round(s.rejectedAmount/s.rejectedCount):0;
 
   document.getElementById('page6').innerHTML=`
@@ -843,10 +930,10 @@ function renderPage6(){
   }).join('');
 }
 function renderPage7(){
-  const s=dashboardData.summary;
-  const dupByMonth=dashboardData.dupByMonth;
-  const suppliers=dashboardData.topSuppliers;
-  const monthly=dashboardData.monthly;
+  const d=getFilteredData();recalcRates(d);const s=d.summary;
+  const dupByMonth=d.dupByMonth;
+  const suppliers=d.topSuppliers;
+  const monthly=d.monthly;
 
   const dupInvRate=s.totalRecords>0?(s.dupInvCount/s.totalRecords*100).toFixed(1):'0';
   const dupLpoRate=s.totalRecords>0?(s.dupLpoCount/s.totalRecords*100).toFixed(1):'0';
@@ -954,11 +1041,11 @@ function renderPage7(){
   }).join('');
 }
 function renderPage8(){
-  const s=dashboardData.summary;
-  const aging=dashboardData.aging;
-  const people=dashboardData.people;
-  const cats=dashboardData.categories;
-  const monthly=dashboardData.monthly;
+  const d=getFilteredData();recalcRates(d);const s=d.summary;
+  const aging=d.aging;
+  const people=d.people;
+  const cats=d.categories;
+  const monthly=d.monthly;
 
   // --- KPI Cards ---
   const totalPending=s.pendingCount;
@@ -1040,9 +1127,9 @@ function renderPage8(){
 }
 
 function renderPage9(){
-  const s=dashboardData.summary;
-  const people=dashboardData.people;
-  const regions=dashboardData.regions;
+  const d=getFilteredData();recalcRates(d);const s=d.summary;
+  const people=d.people;
+  const regions=d.regions;
   const total=s.totalAmount;
 
   // --- KPI Cards ---
