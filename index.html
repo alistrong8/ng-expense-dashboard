@@ -506,10 +506,56 @@ function renderPage1(){
   // Aging Breakdown
   const aging=d.aging;
   const agingOrder=['0-7d','8-30d','31-60d','61-90d','90d+'];
-  const agingColors={'0-7d':C.green,'8-30d':C.blue,'31-60d':C.amber,'61-90d':C.purple,'90d+':C.red,
-  rejectionReasons: [["PLEASE APPLY THROUGH 9S", {"count": 17, "amount": 19146230}], ["please attach mail approval", {"count": 15, "amount": 16707900}], ["pls split the cost center", {"count": 2, "amount": 14933448}], ["attach mail approval", {"count": 11, "amount": 12605000}], ["double application", {"count": 14, "amount": 12178720}], ["address to mirahub limited", {"count": 11, "amount": 7621900}], ["write LPO on the invoice", {"count": 4, "amount": 7525500}], ["please address to mirahub limited", {"count": 3, "amount": 6793500}], ["why purchase in retail price", {"count": 3, "amount": 6050500}], ["DOUBLE APPLICATION", {"count": 12, "amount": 5767100}]],
+  const agingColors={'0-7d':C.green,'8-30d':C.blue,'31-60d':C.amber,'61-90d':C.purple,'90d+':C.red};
+  const totalPending=s.pendingAmount;
+  document.getElementById('tblAging').querySelector('tbody').innerHTML=agingOrder.map(b=>{
+    const a=aging[b];
+    const pct=totalPending>0?(a.amount/totalPending*100).toFixed(1):'0.0';
+    return '<tr><td><span style="color:'+agingColors[b]+'">●</span> '+b+'</td><td class="mono">'+fmtNGNM(a.amount)+'</td><td>'+fmt(a.count)+'</td><td>'+pct+'%</td></tr>';
+  }).join('');
+}
+// ========== STUB PAGES ==========
+function stubPage(id,label){document.getElementById(id).innerHTML='<h2 class="page-title">'+label+'</h2><p style="color:var(--muted)">Coming in next stage...</p>'}
+function renderPage2(){
+  const d=getFilteredData();recalcRates(d);const s=d.summary;
+  const cats=d.categories;const cc=d.costCenters;const sup=d.topSuppliers;
+  const expTypes=d.expenseTypes;const totalAmt=s.totalAmount;
+  const avgTxn=totalAmt/s.totalRecords;const topCat=cats[0];
+  const topRegion=d.regions[0];
+  const matCost=expTypes.find(e=>e[0]==='Material Cost');
+  const opCost=expTypes.find(e=>e[0]==='Operation Cost');
+  document.getElementById('page2').innerHTML='<h2 class="page-title">💰 Expense Analysis</h2>'+
+  '<div class="kpi-grid">'+
+  '<div class="kpi"><div class="kpi-val mono blue">'+fmtNGNM(totalAmt)+'</div><div class="kpi-lbl">Total Expense</div></div>'+
+  '<div class="kpi"><div class="kpi-val mono">'+fmtNGNM(avgTxn)+'</div><div class="kpi-lbl">Avg per Transaction</div><div class="kpi-sub">'+fmt(s.totalRecords)+' records</div></div>'+
+  '<div class="kpi"><div class="kpi-val mono" style="font-size:13px">'+topCat[0]+'</div><div class="kpi-lbl">Top Category</div><div class="kpi-sub">'+fmtNGNM(topCat[1].total)+' ('+fmtPct(topCat[1].total/totalAmt*100)+')</div></div>'+
+  '<div class="kpi"><div class="kpi-val mono">'+topRegion[0]+'</div><div class="kpi-lbl">Top Region</div><div class="kpi-sub">'+fmtNGNM(topRegion[1].total)+' ('+fmtPct(topRegion[1].total/totalAmt*100)+')</div></div>'+
+  '<div class="kpi"><div class="kpi-val mono green">'+fmtNGNM(matCost[1].total)+'</div><div class="kpi-lbl">Material Cost</div><div class="kpi-sub green">'+fmtPct(matCost[1].total/totalAmt*100)+' of total</div></div>'+
+  '<div class="kpi"><div class="kpi-val mono teal">'+fmtNGNM(opCost[1].total)+'</div><div class="kpi-lbl">Operation Cost</div><div class="kpi-sub teal">'+fmtPct(opCost[1].total/totalAmt*100)+' of total</div></div>'+
+  '</div>'+
+  '<div class="chart-row"><div class="chart-card"><h3>📊 Top 10 Categories by Spend</h3><canvas id="chartCat2"></canvas></div><div class="chart-card"><h3>🏢 Cost Center Breakdown</h3><canvas id="chartCC"></canvas></div></div>'+
+  '<div class="chart-row"><div class="chart-card"><h3>📈 Expense Type Monthly Trend</h3><canvas id="chartExpTrend"></canvas></div><div class="chart-card"><h3>📦 Expense Type Split</h3><canvas id="chartET2"></canvas></div></div>'+
+  '<div class="chart-row"><div class="chart-card"><h3>🔗 Top 15 Suppliers</h3><div class="overflow"><table><thead><tr><th>#</th><th>Supplier</th><th class="mono">Amount</th><th>Count</th><th class="mono">Avg</th></tr></thead><tbody id="tblSup2"></tbody></table></div></div></div>';
+  if(typeof Chart==='undefined')return;
+  Chart.defaults.color=C.text;Chart.defaults.borderColor=C.grid;Chart.defaults.font.size=10;
+  const topCats=cats.slice(0,10);const catColors=[C.blue,C.green,C.purple,C.amber,C.teal,C.red,'#ec4899','#f97316','#6366f1','#06b6d4'];
+  safeDestroy('cat2');charts.cat2=new Chart(document.getElementById('chartCat2'),{type:'doughnut',data:{labels:topCats.map(c=>c[0]),datasets:[{data:topCats.map(c=>c[1].total),backgroundColor:catColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:C.text,font:{size:10},padding:12}},tooltip:{callbacks:{label:function(c){return fmtNGN(c.raw)+' ('+(c.raw/totalAmt*100).toFixed(1)+'%)'}}}}}});
+  const ccColors=[C.blue,C.green,C.purple,C.amber,C.teal,C.red,'#ec4899','#f97316','#6366f1','#06b6d4','#84cc16'];
+  safeDestroy('ccChart');charts.ccChart=new Chart(document.getElementById('chartCC'),{type:'bar',data:{labels:cc.map(c=>c[0]),datasets:[{data:cc.map(c=>c[1].total/1e6),backgroundColor:ccColors,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return fmtNGN(c.raw*1e6)+' ('+(c.raw*1e6/totalAmt*100).toFixed(1)+'%)'}}}},scales:{x:{ticks:{callback:v=>'₦'+v+'M'},grid:{color:C.grid}}}}});
+  const monthNames2=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];const f=getFilterState();
+  let trendLabel='All Expense Types';let trendData=d.monthly.map(m=>m.total/1e6);
+  const trendColor=f.expType==='Material Cost'?C.blue:f.expType==='Operation Cost'?C.teal:C.purple;
+  if(f.expType!=='all'){trendLabel=f.expType;const et=d.expenseTypes.find(e=>e[0]===f.expType);if(et){const ratio=et[1].total/totalAmt;trendData=d.monthly.map(m=>m.total*ratio/1e6);}}
+  if(f.region!=='all'){trendLabel+=' - '+f.region;const reg=d.regions.find(r=>r[0]===f.region);if(reg){trendData=trendData.map(v=>v*(reg[1].total/totalAmt));}}
+  safeDestroy('expTrend');charts.expTrend=new Chart(document.getElementById('chartExpTrend'),{type:'line',data:{labels:monthNames2,datasets:[{label:trendLabel,data:trendData,borderColor:trendColor,backgroundColor:trendColor+'20',borderWidth:2,fill:true,tension:.3,pointRadius:4,pointBackgroundColor:trendColor}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:C.text,font:{size:10}}},tooltip:{callbacks:{label:function(c){return c.dataset.label+': ₦'+c.raw.toFixed(1)+'M'}}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>'₦'+v+'M'},grid:{color:C.grid}}}}});
+  safeDestroy('et2');charts.et2=new Chart(document.getElementById('chartET2'),{type:'doughnut',data:{labels:expTypes.map(e=>e[0]),datasets:[{data:expTypes.map(e=>e[1].total),backgroundColor:[C.blue,C.teal],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:C.text,font:{size:10},padding:16}},tooltip:{callbacks:{label:function(c){return c.label+': '+fmtNGN(c.raw)+' ('+(c.raw/totalAmt*100).toFixed(1)+'%)'}}}}}});
+  const maxSup=sup[0][1].total;document.getElementById('tblSup2').innerHTML=sup.slice(0,15).map((s,i)=>'<tr><td>'+(i+1)+'</td><td>'+s[0]+'</td><td class="mono">'+fmtNGNM(s[1].total)+' <span class="bar-mini" style="width:'+Math.max(4,(s[1].total/maxSup)*80)+'px;background:'+catColors[i%10]+'"></span></td><td>'+fmt(s[1].count)+'</td><td class="mono">'+fmtNGNM(s[1].total/s[1].count)+'</td></tr>').join('');
+}
+function renderPage3(){ [["PLEASE APPLY THROUGH 9S", {"count": 17, "amount": 19146230}], ["please attach mail approval", {"count": 15, "amount": 16707900}], ["pls split the cost center", {"count": 2, "amount": 14933448}], ["attach mail approval", {"count": 11, "amount": 12605000}], ["double application", {"count": 14, "amount": 12178720}], ["address to mirahub limited", {"count": 11, "amount": 7621900}], ["write LPO on the invoice", {"count": 4, "amount": 7525500}], ["please address to mirahub limited", {"count": 3, "amount": 6793500}], ["why purchase in retail price", {"count": 3, "amount": 6050500}], ["DOUBLE APPLICATION", {"count": 12, "amount": 5767100}]],
   rejectionByRegion: [["South East", {"count": 21, "amount": 18462900}], ["Lagos", {"count": 14, "amount": 18719640}], ["South West", {"count": 7, "amount": 7213000}]],
-  dupByMonth: {"Jan": {"dupInv": 140, "dupLpo": 64}, "Feb": {"dupInv": 60, "dupLpo": 23}}};
+  rejectionReasons: [["PLEASE APPLY THROUGH 9S",{"count":17,"amount":19146230}],["please attach mail approval",{"count":15,"amount":16707900}],["pls split the cost center",{"count":2,"amount":14933448}],["attach mail approval",{"count":11,"amount":12605000}],["double application",{"count":14,"amount":12178720}],["address to mirahub limited",{"count":11,"amount":7621900}],["write LPO on the invoice",{"count":4,"amount":7525500}],["please address to mirahub limited",{"count":3,"amount":6793500}],["why purchase in retail price",{"count":3,"amount":6050500}],["DOUBLE APPLICATION",{"count":12,"amount":5767100}]],
+  rejectionByRegion: [["South East",{"count":21,"amount":18462900}],["Lagos",{"count":14,"amount":18719640}],["South West",{"count":7,"amount":7213000}]],
+  dupByMonth: {"Jan":{"dupInv":140,"dupLpo":64},"Feb":{"dupInv":60,"dupLpo":23}}};
   const totalPending=s.pendingAmount;
   document.getElementById('tblAging').querySelector('tbody').innerHTML=agingOrder.map(b=>{
     const a=aging[b];
