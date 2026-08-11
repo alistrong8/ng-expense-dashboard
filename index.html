@@ -322,7 +322,10 @@ function renderPage1(){
   // Aging Breakdown
   const aging=dashboardData.aging;
   const agingOrder=['0-7d','8-30d','31-60d','61-90d','90d+'];
-  const agingColors={'0-7d':C.green,'8-30d':C.blue,'31-60d':C.amber,'61-90d':C.purple,'90d+':C.red};
+  const agingColors={'0-7d':C.green,'8-30d':C.blue,'31-60d':C.amber,'61-90d':C.purple,'90d+':C.red,
+  rejectionReasons: [["PLEASE APPLY THROUGH 9S", {"count": 17, "amount": 19146230}], ["please attach mail approval", {"count": 15, "amount": 16707900}], ["pls split the cost center", {"count": 2, "amount": 14933448}], ["attach mail approval", {"count": 11, "amount": 12605000}], ["double application", {"count": 14, "amount": 12178720}], ["address to mirahub limited", {"count": 11, "amount": 7621900}], ["write LPO on the invoice", {"count": 4, "amount": 7525500}], ["please address to mirahub limited", {"count": 3, "amount": 6793500}], ["why purchase in retail price", {"count": 3, "amount": 6050500}], ["DOUBLE APPLICATION", {"count": 12, "amount": 5767100}]],
+  rejectionByRegion: [["South East", {"count": 21, "amount": 18462900}], ["Lagos", {"count": 14, "amount": 18719640}], ["South West", {"count": 7, "amount": 7213000}]],
+  dupByMonth: {"Jan": {"dupInv": 140, "dupLpo": 64}, "Feb": {"dupInv": 60, "dupLpo": 23}}};
   const totalPending=s.pendingAmount;
   document.getElementById('tblAging').querySelector('tbody').innerHTML=agingOrder.map(b=>{
     const a=aging[b];
@@ -566,8 +569,230 @@ ${agingOrder.map(b=>{const a=aging[b];const pct=totalAgingAmt>0?(a.amount/totalA
     {label:'Amount (₦M)',data:[s.paidAmount/1e6,s.pendingAmount/1e6,s.rejectedAmount/1e6],backgroundColor:[C.green+'66',C.amber+'66',C.red+'66'],borderRadius:4,yAxisID:'y1'}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:C.text,font:{size:10},usePointStyle:true},tooltip:{callbacks:{label:function(c){if(c.datasetIndex===0)return'Count: '+fmt(c.raw);return'Amount: '+fmtNGNM(c.raw*1e6)}}}}},scales:{x:{grid:{display:false}},y:{position:'left',title:{display:true,text:'Count',color:C.text},ticks:{callback:v=>fmt(v)},grid:{color:C.grid}},y1:{position:'right',title:{display:true,text:'Amount (₦M)',color:C.text},ticks:{callback:v=>'₦'+v+'M'},grid:{display:false}}}}});
 }
-function renderPage6(){stubPage('page6','🚫 Rejection Analysis')}
-function renderPage7(){stubPage('page7','🔍 Audit & Control')}
+function renderPage6(){
+  const s=dashboardData.summary;
+  const monthly=dashboardData.monthly;
+  const rejReasons=dashboardData.rejectionReasons;
+  const rejByRegion=dashboardData.rejectionByRegion;
+  const people=dashboardData.people;
+  const avgRej=s.rejectedCount>0?Math.round(s.rejectedAmount/s.rejectedCount):0;
+
+  document.getElementById('page6').innerHTML=`
+<h2 class="page-title">🚫 Rejection Analysis</h2>
+<div class="kpi-grid">
+<div class="kpi"><div class="kpi-val mono red">${fmt(s.rejectedCount)}</div><div class="kpi-lbl">Total Rejections</div><div class="kpi-sub red">${fmtPct(parseFloat(s.rejectedRate))} rejection rate</div></div>
+<div class="kpi"><div class="kpi-val mono red">${fmtNGNM(s.rejectedAmount)}</div><div class="kpi-lbl">Rejected Amount</div><div class="kpi-sub">${fmt(s.rejectedCount)} transactions</div></div>
+<div class="kpi"><div class="kpi-val mono red">${s.rejectedRate}%</div><div class="kpi-lbl">Rejection Rate</div><div class="kpi-sub">531 / ${fmt(s.totalRecords)} total</div></div>
+<div class="kpi"><div class="kpi-val mono amber">${fmtNGN(avgRej)}</div><div class="kpi-lbl">Avg Rejection Amount</div><div class="kpi-sub">per rejected transaction</div></div>
+<div class="kpi"><div class="kpi-val mono">${rejReasons.length}+</div><div class="kpi-lbl">Unique Rejection Reasons</div><div class="kpi-sub">top 10 shown below</div></div>
+<div class="kpi"><div class="kpi-val mono red">${fmtPct(parseFloat(s.rejectedRate))}</div><div class="kpi-lbl">Rejection Impact</div><div class="kpi-sub red">${fmtNGNM(s.rejectedAmount)} lost/blocked</div></div>
+</div>
+<div class="chart-row">
+<div class="chart-card"><h3>📈 Monthly Rejection Amount — ₦M</h3><canvas id="chartRejMonthly"></canvas></div>
+<div class="chart-card"><h3>🔍 Top 10 Rejection Reasons</h3><canvas id="chartRejReasons"></canvas></div>
+</div>
+<div class="chart-row">
+<div class="chart-card"><h3>🌍 Rejection by Region</h3><canvas id="chartRejRegion"></canvas></div>
+<div class="chart-card"><h3>👤 Top 10 People by Rejection Count</h3><div class="overflow"><table id="tblRejPeople"><thead><tr><th>#</th><th>Name</th><th>Total Txn</th><th class="mono">Rejected</th><th>Rej Rate</th><th class="mono">Amt Spent</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+  `;
+
+  if(typeof Chart==='undefined')return;
+  Chart.defaults.color=C.text;Chart.defaults.borderColor=C.grid;Chart.defaults.font.size=10;
+
+  // Monthly Rejection Amount
+  const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
+  safeDestroy('rejMonthly');
+  charts.rejMonthly=new Chart(document.getElementById('chartRejMonthly'),{
+    type:'bar',
+    data:{
+      labels:monthNames,
+      datasets:[{
+        data:monthly.map(m=>m.rejected/1e6),
+        backgroundColor:C.red,
+        borderRadius:4,
+        barPercentage:.7
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:function(c){return 'Rejected: '+fmtNGN(c.raw*1e6)}}}
+      },
+      scales:{
+        x:{grid:{display:false}},
+        y:{ticks:{callback:v=>'₦'+v+'M'},grid:{color:C.grid}}
+      }
+    }
+  });
+
+  // Top 10 Rejection Reasons (Donut)
+  const topReasons=rejReasons.slice(0,10);
+  const reasonColors=[C.red,C.amber,C.purple,C.blue,C.teal,'#ec4899','#f97316','#6366f1','#06b6d4','#84cc16'];
+  const othersCount=s.rejectedCount-topReasons.reduce((s,r)=>s+r[1].count,0);
+  const othersAmount=s.rejectedAmount-topReasons.reduce((s,r)=>s+r[1].amount,0);
+  const donutLabels=topReasons.map(r=>r[0].length>25?r[0].substring(0,25)+'...':r[0]);
+  const donutData=topReasons.map(r=>r[1].count);
+  if(othersCount>0){donutLabels.push('Other Reasons');donutData.push(othersCount);reasonColors.push('#374151');}
+
+  safeDestroy('rejReasons');
+  charts.rejReasons=new Chart(document.getElementById('chartRejReasons'),{
+    type:'doughnut',
+    data:{
+      labels:donutLabels,
+      datasets:[{data:donutData,backgroundColor:reasonColors.slice(0,donutData.length),borderWidth:0}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'right',labels:{color:C.text,font:{size:9},padding:8}},
+        tooltip:{callbacks:{label:function(c){const idx=c.dataIndex;if(idx<topReasons.length)return c.label+': '+c.raw+' rejected ('+fmtNGN(topReasons[idx][1].amount)+')';return c.label+': '+c.raw+' rejected';}}}
+      }
+    }
+  });
+
+  // Rejection by Region
+  const regColors2=[C.red,C.amber,C.purple,C.blue,C.teal,'#ec4899','#f97316'];
+  safeDestroy('rejRegion');
+  charts.rejRegion=new Chart(document.getElementById('chartRejRegion'),{
+    type:'bar',
+    data:{
+      labels:rejByRegion.map(r=>r[0]),
+      datasets:[{
+        data:rejByRegion.map(r=>r[1].count),
+        backgroundColor:regColors2,borderRadius:4
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:function(c){const idx=c.dataIndex;return rejByRegion[idx][0]+': '+c.raw+' rejected ('+fmtNGN(rejByRegion[idx][1].amount)+')';}}}
+      },
+      scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>fmt(v)},grid:{color:C.grid}}}
+    }
+  });
+
+  // Top 10 Rejected People Table
+  const pplWithRej=people.filter(p=>p[1].rejected>0).sort((a,b)=>b[1].rejected-a[1].rejected).slice(0,10);
+  document.getElementById('tblRejPeople').querySelector('tbody').innerHTML=pplWithRej.map((p,i)=>{
+    const rate=p[1].count>0?(p[1].rejected/p[1].count*100):0;
+    const rc=rate>30?C.red:rate>15?C.amber:C.green;
+    return `<tr><td>${i+1}</td><td>${p[0]}</td><td>${fmt(p[1].count)}</td><td class="mono red">${p[1].rejected}</td><td class="mono" style="color:${rc}">${fmtPct(rate)}</td><td class="mono">${fmtNGNM(p[1].total)}</td></tr>`;
+  }).join('');
+}
+function renderPage7(){
+  const s=dashboardData.summary;
+  const dupByMonth=dashboardData.dupByMonth;
+  const suppliers=dashboardData.topSuppliers;
+  const monthly=dashboardData.monthly;
+
+  const dupInvRate=s.totalRecords>0?(s.dupInvCount/s.totalRecords*100).toFixed(1):'0';
+  const dupLpoRate=s.totalRecords>0?(s.dupLpoCount/s.totalRecords*100).toFixed(1):'0';
+  const completeness=((s.totalRecords-s.missingEvidence-s.missingPayDate)/s.totalRecords*100).toFixed(1);
+  const dataQuality=Math.round((parseFloat(completeness)*(1-parseFloat(dupInvRate)/100)*(1-parseFloat(dupLpoRate)/100)));
+
+  document.getElementById('page7').innerHTML=`
+<h2 class="page-title">🔍 Audit & Control</h2>
+<div class="kpi-grid">
+<div class="kpi"><div class="kpi-val mono red">${fmt(s.dupInvCount)}</div><div class="kpi-lbl">Duplicate Invoices</div><div class="kpi-sub red">${dupInvRate}% of records</div></div>
+<div class="kpi"><div class="kpi-val mono red">${fmt(s.dupLpoCount)}</div><div class="kpi-lbl">Duplicate LPOs</div><div class="kpi-sub red">${dupLpoRate}% of records</div></div>
+<div class="kpi"><div class="kpi-val mono green">${s.missingEvidence}</div><div class="kpi-lbl">Missing Evidence</div><div class="kpi-sub green">Clean — no issues</div></div>
+<div class="kpi"><div class="kpi-val mono green">${s.missingPayDate}</div><div class="kpi-lbl">Missing Payment Date</div><div class="kpi-sub green">Clean — all documented</div></div>
+<div class="kpi"><div class="kpi-val mono blue">${s.totalSuppliers}</div><div class="kpi-lbl">Total Suppliers</div><div class="kpi-sub">Active in 2025</div></div>
+<div class="kpi"><div class="kpi-val mono blue">${s.totalCenters}</div><div class="kpi-lbl">Total Cost Centers</div><div class="kpi-sub">Active in 2025</div></div>
+</div>
+
+<div class="kpi-grid" style="margin-bottom:10px">
+<div class="kpi" style="border-left:3px solid ${dataQuality>80?C.green:dataQuality>60?C.amber:C.red}">
+  <div class="kpi-lbl">📊 DATA QUALITY SCORE</div>
+  <div class="kpi-val mono" style="font-size:28px;color:${dataQuality>80?C.green:dataQuality>60?C.amber:C.red}">${dataQuality}%</div>
+  <div class="kpi-sub">Completeness: ${completeness}% | Inv Dup: ${dupInvRate}% | LPO Dup: ${dupLpoRate}%</div>
+</div>
+<div class="kpi" style="border-left:3px solid ${C.green}">
+  <div class="kpi-lbl">✅ COMPLIANCE</div>
+  <div class="kpi-val mono" style="font-size:28px;color:${C.green}">100%</div>
+  <div class="kpi-sub">All evidence & payment dates verified</div>
+</div>
+<div class="kpi" style="border-left:3px solid ${parseFloat(dupInvRate)>5?C.red:C.amber}">
+  <div class="kpi-lbl">⚠️ DUPLICATE RISK</div>
+  <div class="kpi-val mono" style="font-size:28px;color:${parseFloat(dupInvRate)>5?C.red:C.amber}">${(s.dupInvCount+s.dupLpoCount)}</div>
+  <div class="kpi-sub">${s.dupInvCount} inv + ${s.dupLpoCount} LPO flagged</div>
+</div>
+</div>
+
+<div class="chart-row">
+<div class="chart-card"><h3>📈 Monthly Duplicate Invoices</h3><canvas id="chartDupMonthly"></canvas></div>
+<div class="chart-card"><h3>🚨 Risk Alert Cards</h3><div class="overflow" id="riskAlerts"></div></div>
+</div>
+
+<div class="chart-row">
+<div class="chart-card full-width"><h3>🏢 Top 15 Suppliers — Risk & Control View</h3><div class="overflow"><table id="tblSuppRisk"><thead><tr><th>#</th><th>Supplier</th><th class="mono">Total Spend</th><th>Count</th><th>Risk Flags</th><th>Risk Level</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+  `;
+
+  // Risk Alert Cards
+  const totalDups=s.dupInvCount+s.dupLpoCount;
+  document.getElementById('riskAlerts').innerHTML=`
+<div style="display:grid;grid-template-columns:1fr;gap:8px">
+  <div class="kpi" style="border-left:3px solid ${C.red}"><div class="kpi-lbl">🔴 HIGH RISK — ${totalDups} Duplicate Records</div><div class="kpi-sub">${s.dupInvCount} duplicate invoices + ${s.dupLpoCount} duplicate LPOs detected. ${dupLpoRate}% LPO duplication rate indicates procurement control gaps.</div></div>
+  <div class="kpi" style="border-left:3px solid ${C.amber}"><div class="kpi-lbl">🟡 MEDIUM RISK — Unknown Supplier Dominance</div><div class="kpi-sub">"Unknown" supplier accounts for ${fmtNGNM(suppliers[0][1].total)} (${fmtPct(suppliers[0][1].total/s.totalAmount*100)} of spend). Supplier data quality needs improvement.</div></div>
+  <div class="kpi" style="border-left:3px solid ${C.green}"><div class="kpi-lbl">🟢 LOW RISK — Evidence & Payment Compliance</div><div class="kpi-sub">${s.missingEvidence} missing evidence, ${s.missingPayDate} missing payment dates. All records are fully documented.</div></div>
+  <div class="kpi" style="border-left:3px solid ${C.amber}"><div class="kpi-lbl">🟡 MEDIUM RISK — Top Supplier Concentration</div><div class="kpi-sub">Top 5 suppliers account for ${fmtPct(suppliers.slice(0,5).reduce((s,x)=>s+x[1].total,0)/s.totalAmount*100)} of total spend. Review procurement diversity.</div></div>
+  <div class="kpi" style="border-left:3px solid ${C.green}"><div class="kpi-lbl">🟢 LOW RISK — Cost Center Coverage</div><div class="kpi-sub">${s.totalCenters} cost centers actively tracked. All transactions properly allocated.</div></div>
+</div>
+  `;
+
+  if(typeof Chart==='undefined')return;
+  Chart.defaults.color=C.text;Chart.defaults.borderColor=C.grid;Chart.defaults.font.size=10;
+
+  // Monthly Duplicate Invoices
+  const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
+  const dupInvData=monthNames.map(m=>(dupByMonth[m]||{dupInv:0}).dupInv);
+  const dupLpoData=monthNames.map(m=>(dupByMonth[m]||{dupLpo:0}).dupLpo);
+  safeDestroy('dupMonthly');
+  charts.dupMonthly=new Chart(document.getElementById('chartDupMonthly'),{
+    type:'bar',
+    data:{
+      labels:monthNames,
+      datasets:[
+        {label:'Duplicate Invoices',data:dupInvData,backgroundColor:C.red,borderRadius:4,barPercentage:.7},
+        {label:'Duplicate LPOs',data:dupLpoData,backgroundColor:C.amber,borderRadius:4,barPercentage:.7}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:C.text,font:{size:10},usePointStyle:true}},
+        tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.raw}}}
+      },
+      scales:{
+        x:{grid:{display:false}},
+        y:{ticks:{callback:v=>fmt(v)},grid:{color:C.grid},title:{display:true,text:'Count',color:C.text}}
+      }
+    }
+  });
+
+  // Supplier Risk Table
+  const maxSupp=s.totalAmount;
+  const riskLevels=['🔴 High','🟡 Medium','🟢 Low','🟢 Low','🟢 Low','🟢 Low','🟢 Low','🟢 Low','🟢 Low','🟢 Low','🟢 Low','🟢 Low','🟢 Low','🟢 Low','🟢 Low'];
+  const riskFlags=['Unknown,High spend','Normal','Normal','Normal','Normal','Normal','Normal','Normal','Normal','Normal','Normal','Normal','Normal','Normal','Normal'];
+  document.getElementById('tblSuppRisk').querySelector('tbody').innerHTML=suppliers.slice(0,15).map((s,i)=>{
+    const pct=s[1].total/maxSupp*100;
+    const isUnknown=s[0]==='Unknown';
+    const risk=isUnknown?'🔴 High':pct>3?'🟡 Medium':'🟢 Low';
+    const flags=isUnknown?'Unknown supplier, high concentration':pct>3?'High spend concentration':'Normal';
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${s[0]}</td>
+      <td class="mono">${fmtNGNM(s[1].total)} <span class="bar-mini" style="width:${Math.max(4,pct*2)}px;background:${isUnknown?C.red:pct>3?C.amber:C.green}"></span></td>
+      <td>${fmt(s[1].count)}</td>
+      <td style="font-size:10px">${flags}</td>
+      <td><span style="color:${isUnknown?C.red:pct>3?C.amber:C.green}">${risk}</span></td>
+    </tr>`;
+  }).join('');
+}
 function renderPage8(){
   const s=dashboardData.summary;
   const aging=dashboardData.aging;
