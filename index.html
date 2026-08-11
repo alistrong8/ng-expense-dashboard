@@ -162,7 +162,8 @@ const dashboardData = {
     {"name":"Infinix Accessories","avgTAT":8.0,"count":9},
     {"name":"Itel Homes","avgTAT":7.0,"count":1},
     {"name":"Unknown","avgTAT":10.0,"count":2}
-  ]
+  ],
+  costCenters: [["CC-Phone", {"total": 2720390161, "count": 3229}], ["CC-Accessories", {"total": 102397178, "count": 36}], ["CC-Phone-HQ", {"total": 100887429, "count": 113}], ["Oraimo Accessories", {"total": 44688930, "count": 20}], ["CC-Home Appliance", {"total": 29476858, "count": 59}], ["ITEL Energy", {"total": 21609048, "count": 32}], ["Tecno Accessories", {"total": 20753250, "count": 29}], ["Itel Accessories", {"total": 7992836, "count": 15}], ["Infinix Accessories", {"total": 551450, "count": 9}], ["Itel Homes", {"total": 232500, "count": 1}], ["Unknown", {"total": 44800, "count": 2}]]
 };
 
 // ========== UTILITY FUNCTIONS ==========
@@ -337,8 +338,128 @@ function renderPage1(){
 
 // ========== STUB PAGES ==========
 function stubPage(id,label){document.getElementById(id).innerHTML='<h2 class="page-title">'+label+'</h2><p style="color:var(--muted)">Coming in next stage...</p>'}
-function renderPage2(){stubPage('page2','💰 Expense Analysis')}
-function renderPage3(){stubPage('page3','📈 Historical Analysis')}
+function renderPage2(){
+  const s=dashboardData.summary;
+  const cats=dashboardData.categories;
+  const cc=dashboardData.costCenters;
+  const sup=dashboardData.topSuppliers;
+  const expTypes=dashboardData.expenseTypes;
+  const totalAmt=s.totalAmount;
+  const avgTxn=totalAmt/s.totalRecords;
+  const topCat=cats[0];
+  const topRegion=dashboardData.regions[0];
+  const matCost=expTypes.find(e=>e[0]==='Material Cost');
+  const opCost=expTypes.find(e=>e[0]==='Operation Cost');
+
+  document.getElementById('page2').innerHTML=`
+<h2 class="page-title">💰 Expense Analysis</h2>
+<div class="kpi-grid">
+<div class="kpi"><div class="kpi-val mono blue">${fmtNGNM(totalAmt)}</div><div class="kpi-lbl">Total Expense</div></div>
+<div class="kpi"><div class="kpi-val mono">${fmtNGNM(avgTxn)}</div><div class="kpi-lbl">Avg per Transaction</div><div class="kpi-sub">${fmt(s.totalRecords)} records</div></div>
+<div class="kpi"><div class="kpi-val mono" style="font-size:13px">${topCat[0]}</div><div class="kpi-lbl">Top Category</div><div class="kpi-sub">${fmtNGNM(topCat[1].total)} (${fmtPct(topCat[1].total/totalAmt*100)})</div></div>
+<div class="kpi"><div class="kpi-val mono">${topRegion[0]}</div><div class="kpi-lbl">Top Region</div><div class="kpi-sub">${fmtNGNM(topRegion[1].total)} (${fmtPct(topRegion[1].total/totalAmt*100)})</div></div>
+<div class="kpi"><div class="kpi-val mono green">${fmtNGNM(matCost[1].total)}</div><div class="kpi-lbl">Material Cost</div><div class="kpi-sub green">${fmtPct(matCost[1].total/totalAmt*100)} of total</div></div>
+<div class="kpi"><div class="kpi-val mono teal">${fmtNGNM(opCost[1].total)}</div><div class="kpi-lbl">Operation Cost</div><div class="kpi-sub teal">${fmtPct(opCost[1].total/totalAmt*100)} of total</div></div>
+</div>
+<div class="chart-row">
+<div class="chart-card"><h3>📊 Top 10 Categories by Spend</h3><canvas id="chartCat2"></canvas></div>
+<div class="chart-card"><h3>🏢 Cost Center Breakdown</h3><canvas id="chartCC"></canvas></div>
+</div>
+<div class="chart-row">
+<div class="chart-card"><h3>📦 Expense Type Split</h3><canvas id="chartET2"></canvas></div>
+<div class="chart-card"><h3>🔗 Top 15 Suppliers</h3><div class="overflow"><table><thead><tr><th>#</th><th>Supplier</th><th class="mono">Amount</th><th>Count</th><th class="mono">Avg</th></tr></thead><tbody id="tblSup2"></tbody></table></div></div>
+</div>`;
+
+  if(typeof Chart==='undefined')return;
+  Chart.defaults.color=C.text;Chart.defaults.borderColor=C.grid;Chart.defaults.font.size=10;
+
+  // Top 10 Categories Donut
+  const topCats=cats.slice(0,10);
+  const catColors=[C.blue,C.green,C.purple,C.amber,C.teal,C.red,'#ec4899','#f97316','#6366f1','#06b6d4'];
+  safeDestroy('cat2');
+  charts.cat2=new Chart(document.getElementById('chartCat2'),{type:'doughnut',data:{labels:topCats.map(c=>c[0]),datasets:[{data:topCats.map(c=>c[1].total),backgroundColor:catColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:C.text,font:{size:10},padding:12}},tooltip:{callbacks:{label:function(c){return fmtNGN(c.raw)+' ('+(c.raw/totalAmt*100).toFixed(1)+'%)'}}}}}});
+
+  // Cost Center Horizontal Bar
+  const ccColors=[C.blue,C.green,C.purple,C.amber,C.teal,C.red,'#ec4899','#f97316','#6366f1','#06b6d4','#84cc16'];
+  safeDestroy('ccChart');
+  charts.ccChart=new Chart(document.getElementById('chartCC'),{type:'bar',data:{labels:cc.map(c=>c[0]),datasets:[{data:cc.map(c=>c[1].total/1e6),backgroundColor:ccColors,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return fmtNGN(c.raw*1e6)+' ('+(c.raw*1e6/totalAmt*100).toFixed(1)+'%)'}}}},scales:{x:{ticks:{callback:v=>'₦'+v+'M'},grid:{color:C.grid}}}}});
+
+  // Expense Type Donut
+  safeDestroy('et2');
+  charts.et2=new Chart(document.getElementById('chartET2'),{type:'doughnut',data:{labels:expTypes.map(e=>e[0]),datasets:[{data:expTypes.map(e=>e[1].total),backgroundColor:[C.blue,C.teal],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:C.text,font:{size:10},padding:16}},tooltip:{callbacks:{label:function(c){return c.label+': '+fmtNGN(c.raw)+' ('+(c.raw/totalAmt*100).toFixed(1)+'%)'}}}}}});
+
+  // Top 15 Suppliers Table
+  const maxSup=sup[0][1].total;
+  document.getElementById('tblSup2').innerHTML=sup.slice(0,15).map((s,i)=>`<tr><td>${i+1}</td><td>${s[0]}</td><td class="mono">${fmtNGNM(s[1].total)} <span class="bar-mini" style="width:${Math.max(4,(s[1].total/maxSup)*80)}px;background:${catColors[i%10]}"></span></td><td>${fmt(s[1].count)}</td><td class="mono">${fmtNGNM(s[1].total/s[1].count)}</td></tr>`).join('');
+}
+function renderPage3(){
+  const s=dashboardData.summary;
+  const monthly=dashboardData.monthly;
+  const totalAmt=s.totalAmount;
+  const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
+
+  // Compute stats
+  const totals=monthly.map(m=>m.total);
+  const highest=monthly.reduce((a,b)=>b.total>a.total?b:a,monthly[0]);
+  const lowest=monthly.reduce((a,b)=>b.total<a.total?b:a,monthly[0]);
+  const avgMonthly=totalAmt/monthly.length;
+  const hiIdx=monthly.indexOf(highest);
+  const loIdx=monthly.indexOf(lowest);
+
+  document.getElementById('page3').innerHTML=`
+<h2 class="page-title">📈 Historical Analysis — 2025 (Jan–Aug)</h2>
+<div class="kpi-grid">
+<div class="kpi"><div class="kpi-val mono blue">${fmtNGNM(totalAmt)}</div><div class="kpi-lbl">Total YTD</div><div class="kpi-sub">${fmt(s.totalRecords)} transactions</div></div>
+<div class="kpi"><div class="kpi-val mono green">${monthNames[hiIdx]} ${fmtNGNM(highest.total)}</div><div class="kpi-lbl">Highest Month</div><div class="kpi-sub green">${fmt(highest.count)} transactions</div></div>
+<div class="kpi"><div class="kpi-val mono red">${monthNames[loIdx]} ${fmtNGNM(lowest.total)}</div><div class="kpi-lbl">Lowest Month</div><div class="kpi-sub red">${fmt(lowest.count)} transactions</div></div>
+<div class="kpi"><div class="kpi-val mono">${fmtNGNM(avgMonthly)}</div><div class="kpi-lbl">Avg Monthly</div><div class="kpi-sub">${fmt(avgMonthly/s.totalRecords*monthly.length)} txns/mo avg</div></div>
+<div class="kpi"><div class="kpi-val mono green">${s.paidRate}%</div><div class="kpi-lbl">Paid Rate YTD</div></div>
+<div class="kpi"><div class="kpi-val mono red">${s.rejectedRate}%</div><div class="kpi-lbl">Rejected Rate YTD</div></div>
+</div>
+<div class="chart-row">
+<div class="chart-card full-width"><h3>📈 Monthly Total Spend Trend (₦M)</h3><canvas id="chartMonthlyTrend"></canvas></div>
+</div>
+<div class="chart-row">
+<div class="chart-card full-width"><h3>📊 Monthly Status Breakdown — Paid vs Rejected vs Pending</h3><canvas id="chartMonthlyStack"></canvas></div>
+</div>
+<div class="table-grid">
+<div class="table-card full-width"><h3>📋 Monthly Breakdown</h3><div class="overflow"><table><thead><tr><th>Month</th><th class="mono">Total</th><th>Count</th><th class="mono">Paid</th><th class="mono">Rejected</th><th class="mono">Pending</th><th class="mono">Avg/Txn</th><th>Paid Rate</th></tr></thead><tbody id="tblMonthly"></tbody></table></div></div>
+</div>`;
+
+  if(typeof Chart==='undefined')return;
+  Chart.defaults.color=C.text;Chart.defaults.borderColor=C.grid;Chart.defaults.font.size=10;
+
+  // Monthly Trend Line Chart
+  safeDestroy('mTrend2');
+  charts.mTrend2=new Chart(document.getElementById('chartMonthlyTrend'),{type:'line',data:{labels:monthNames,datasets:[
+    {label:'Total Spend',data:monthly.map(m=>m.total/1e6),borderColor:C.blue,backgroundColor:C.blue+'33',tension:.4,fill:true,pointRadius:5,pointBackgroundColor:C.blue,borderWidth:2}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:C.text,font:{size:10},usePointStyle:true}},tooltip:{callbacks:{label:c=>fmtNGN(c.raw*1e6)}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>'₦'+v+'M'},grid:{color:C.grid}}}}});
+
+  // Stacked Bar: Paid vs Rejected vs Pending
+  safeDestroy('mStack');
+  charts.mStack=new Chart(document.getElementById('chartMonthlyStack'),{type:'bar',data:{labels:monthNames,datasets:[
+    {label:'Paid',data:monthly.map(m=>m.paid/1e6),backgroundColor:C.green,borderRadius:4,barPercentage:.7},
+    {label:'Rejected',data:monthly.map(m=>m.rejected/1e6),backgroundColor:C.red,borderRadius:4,barPercentage:.7},
+    {label:'Pending',data:monthly.map(m=>m.pending/1e6),backgroundColor:C.amber,borderRadius:4,barPercentage:.7}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:C.text,font:{size:10},usePointStyle:true}},tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+fmtNGN(c.raw*1e6)}}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>'₦'+v+'M'},grid:{color:C.grid}}}}});
+
+  // Monthly Breakdown Table
+  document.getElementById('tblMonthly').innerHTML=monthly.map((m,i)=>{
+    const paidRate=m.total>0?(m.paid/m.total*100).toFixed(1):'0.0';
+    const avgTxn=m.count>0?m.total/m.count:0;
+    const moColor=paidRate>=85?C.green:paidRate>=70?C.amber:C.red;
+    return `<tr>
+      <td><strong>${monthNames[i]}</strong></td>
+      <td class="mono">${fmtNGNM(m.total)}</td>
+      <td>${fmt(m.count)}</td>
+      <td class="mono green">${fmtNGNM(m.paid)}</td>
+      <td class="mono red">${fmtNGNM(m.rejected)}</td>
+      <td class="mono amber">${m.pending>0?fmtNGNM(m.pending):'—'}</td>
+      <td class="mono">${fmtNGNM(avgTxn)}</td>
+      <td style="color:${moColor};font-weight:600">${paidRate}%</td>
+    </tr>`;
+  }).join('')+`<tr style="font-weight:600;border-top:2px solid ${C.border}"><td><strong>YTD</strong></td><td class="mono">${fmtNGNM(totalAmt)}</td><td>${fmt(s.totalRecords)}</td><td class="mono green">${fmtNGNM(s.paidAmount)}</td><td class="mono red">${fmtNGNM(s.rejectedAmount)}</td><td class="mono amber">${fmtNGNM(s.pendingAmount)}</td><td class="mono">${fmtNGNM(totalAmt/s.totalRecords)}</td><td style="color:${C.green};font-weight:600">${s.paidRate}%</td></tr>`;
+}
 function renderPage4(){
   const s=dashboardData.summary;
   const tat=s.avgTAT;
